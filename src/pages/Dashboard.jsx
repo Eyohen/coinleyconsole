@@ -838,7 +838,7 @@ const Dashboard = () => {
       }`}>
         <p className={`font-bold text-3xl ${darkMode ? 'text-white' : 'text-gray-800'}`}>Admin Dashboard</p>
         <p className={`text-lg pt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          Welcome back {user?.name}! Here's what's happening with your platform.
+          Welcome back {user?.name}!
         </p>
       </div>
       
