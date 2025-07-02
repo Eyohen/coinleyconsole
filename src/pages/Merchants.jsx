@@ -722,6 +722,7 @@ const FeeUpdateModal = ({ isOpen, onClose, merchant, onConfirm }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      
       <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
