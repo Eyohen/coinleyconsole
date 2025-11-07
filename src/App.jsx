@@ -21,6 +21,7 @@ import ResetPassword from './pages/ResetPassword';
 import Merchants from './pages/Merchants';
 import TransactionFees from './pages/TransactionFees';
 import Transactions from './pages/Transactions';
+import PlatformSettings from './pages/PlatformSettings';
 
 
 
@@ -76,6 +77,12 @@ function App() {
           <Route path="/settings" element={
             <DashboardLayout>
               <Settings />
+            </DashboardLayout>
+          } />
+
+          <Route path="/platform-settings" element={
+            <DashboardLayout>
+              <PlatformSettings />
             </DashboardLayout>
           } />
 

@@ -67,55 +67,34 @@ const Settings = () => {
     testMode: false
   });
 
-  // Fetch merchant data
-  const fetchMerchantData = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${URL}/api/merchants/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          'x-api-key': user?.apiKey || '',
-          'x-api-secret': user?.apiSecret || ''
-        }
-      });
-      
-      if (response.data && response.data.merchant) {
-        setMerchantData(response.data.merchant);
-        
-        // Initialize business form with merchant data
-        setBusinessForm({
-          businessName: response.data.merchant.businessName || '',
-          businessType: response.data.merchant.businessType || '',
-          phone: response.data.merchant.phone || '',
-          industry: response.data.merchant.industry || '',
-          position: response.data.merchant.position || '',
-          state: response.data.merchant.state || '',
-          country: response.data.merchant.country || '',
-          postal: response.data.merchant.postal || '',
-          city: response.data.merchant.city || '',
-          website: response.data.merchant.website || '',
-          address: response.data.merchant.address || ''
-        });
-        
-        // Initialize API form
-        setApiForm({
-          testMode: response.data.merchant.status === 'test' || false
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching merchant data:', error);
-      setErrorMessage('Failed to load your settings data. Please refresh the page.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Initialize admin data from auth context
   useEffect(() => {
-    if (user && user.apiKey && user.apiSecret) {
-      fetchMerchantData();
+    if (user) {
+      setLoading(false);
+      setMerchantData(user);
+
+      // Initialize business form with admin data from auth context
+      setBusinessForm({
+        businessName: user.name || '',
+        businessType: user.businessType || '',
+        phone: user.phone || '',
+        industry: user.industry || '',
+        position: user.position || '',
+        state: user.state || '',
+        country: user.country || '',
+        postal: user.postal || '',
+        city: user.city || '',
+        website: user.website || '',
+        address: user.address || ''
+      });
+
+      // Initialize API form
+      setApiForm({
+        testMode: user.status === 'test' || false
+      });
     } else {
       setLoading(false);
-      setErrorMessage('Missing API credentials. Please check your account.');
+      setErrorMessage('User not authenticated. Please login again.');
     }
   }, [user]);
 
@@ -152,34 +131,35 @@ const Settings = () => {
     setUpdating(true);
     setSuccessMessage('');
     setErrorMessage('');
-    
+
+    // Admin profile update functionality coming soon
+    setErrorMessage('Admin profile updates are not available yet. Please contact support to update your profile.');
+    setUpdating(false);
+
+    // TODO: Implement admin profile update endpoint in backend
+    /*
     try {
-      const response = await axios.put(`${URL}/api/merchants/profile`, businessForm, {
+      const response = await axios.put(`${URL}/api/admin/profile`, businessForm, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          'x-api-key': user?.apiKey || '',
-          'x-api-secret': user?.apiSecret || ''
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
       });
-      
+
       if (response.data && response.data.success) {
-        // Update local merchant data
         setMerchantData(prev => ({
           ...prev,
           ...businessForm
         }));
-        
-        // Update auth context
+
         if (login && typeof login === 'function') {
           login({
             ...user,
             ...businessForm
           });
         }
-        
+
         setSuccessMessage('Business information updated successfully!');
-        
-        // Clear success message after 3 seconds
+
         setTimeout(() => {
           setSuccessMessage('');
         }, 3000);
@@ -190,6 +170,7 @@ const Settings = () => {
     } finally {
       setUpdating(false);
     }
+    */
   };
 
   // Handle API form submission (test mode toggle)
@@ -198,28 +179,30 @@ const Settings = () => {
     setUpdating(true);
     setSuccessMessage('');
     setErrorMessage('');
-    
+
+    // Admin API settings update functionality coming soon
+    setErrorMessage('Admin API settings updates are not available yet. Please contact support to update your settings.');
+    setUpdating(false);
+
+    // TODO: Implement admin API settings update endpoint in backend
+    /*
     try {
-      const response = await axios.put(`${URL}/api/merchants/profile`, {
+      const response = await axios.put(`${URL}/api/admin/settings`, {
         status: apiForm.testMode ? 'test' : 'active'
       }, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          'x-api-key': user?.apiKey || '',
-          'x-api-secret': user?.apiSecret || ''
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
       });
-      
+
       if (response.data && response.data.success) {
-        // Update local merchant data
         setMerchantData(prev => ({
           ...prev,
           status: apiForm.testMode ? 'test' : 'active'
         }));
-        
+
         setSuccessMessage('API settings updated successfully!');
-        
-        // Clear success message after 3 seconds
+
         setTimeout(() => {
           setSuccessMessage('');
         }, 3000);
@@ -230,6 +213,7 @@ const Settings = () => {
     } finally {
       setUpdating(false);
     }
+    */
   };
 
   // Reset API keys (simulated for now)
@@ -393,13 +377,6 @@ Coinley can send webhooks to your system when payment status changes.
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-        <button 
-          onClick={fetchMerchantData}
-          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50"
-        >
-          <RiRefreshLine className="text-lg" />
-          Refresh
-        </button>
       </div>
 
       {/* Global messages */}

@@ -846,6 +846,24 @@ const WalletModal = ({ isOpen, onClose, onSave, wallets, networks }) => {
     networkWallets: {}
   });
 
+  // Define supported networks for the modal
+  const supportedNetworks = [
+    { id: 'ethereum', name: 'Ethereum', shortName: 'ethereum', logo: null },
+    { id: 'bsc', name: 'Binance Smart Chain', shortName: 'bsc', logo: null },
+    { id: 'polygon', name: 'Polygon', shortName: 'polygon', logo: null },
+    { id: 'arbitrum', name: 'Arbitrum', shortName: 'arbitrum', logo: null },
+    { id: 'optimism', name: 'Optimism', shortName: 'optimism', logo: null },
+    { id: 'avalanche', name: 'Avalanche', shortName: 'avalanche', logo: null },
+    { id: 'celo', name: 'Celo', shortName: 'celo', logo: null },
+    { id: 'base', name: 'Base', shortName: 'base', logo: null },
+    { id: 'tron', name: 'TRON', shortName: 'tron', logo: null },
+    { id: 'solana', name: 'Solana', shortName: 'solana', logo: null },
+    { id: 'algorand', name: 'Algorand', shortName: 'algorand', logo: null }
+  ];
+
+  // Merge backend networks with supported networks (prioritize backend data)
+  const displayNetworks = networks && networks.length > 0 ? networks : supportedNetworks;
+
   useEffect(() => {
     if (wallets) {
       setWalletData({
@@ -911,10 +929,13 @@ const WalletModal = ({ isOpen, onClose, onSave, wallets, networks }) => {
             <h3 className={`text-lg font-medium mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               Network-Specific Wallets
             </h3>
+            <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Configure wallet addresses for receiving fees on different blockchain networks
+            </p>
             <div className="space-y-4">
-              {networks?.map(network => (
-                <div key={network.id} className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 w-32">
+              {displayNetworks?.map(network => (
+                <div key={network.id || network.shortName} className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 w-40">
                     {network.logo && (
                       <img src={network.logo} alt={network.name} className="w-6 h-6" />
                     )}
@@ -927,10 +948,10 @@ const WalletModal = ({ isOpen, onClose, onSave, wallets, networks }) => {
                     value={walletData.networkWallets[network.shortName] || ''}
                     onChange={(e) => handleNetworkWalletChange(network.shortName, e.target.value)}
                     placeholder={`Enter ${network.name} wallet address...`}
-                    className={`flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${
-                      darkMode 
-                        ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-800'
+                    className={`flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] font-mono text-sm ${
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500'
+                        : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
                     }`}
                   />
                 </div>
@@ -989,8 +1010,7 @@ const TransactionFees = () => {
     networkWallets: {}
   });
   const [networks, setNetworks] = useState([]);
-  const [showWalletModal, setShowWalletModal] = useState(false);
-  
+
   // Fee processing states
   const [feeProcessing, setFeeProcessing] = useState(false);
   
@@ -1282,29 +1302,6 @@ const TransactionFees = () => {
     fetchFeeTransactions(1);
   };
 
-  // Save wallet addresses
-  const handleSaveWallets = async (walletData) => {
-    try {
-      const response = await axios.put(`${URL}/api/admin/wallets`, {
-        walletAddress: walletData.mainWallet,
-        networkWallets: walletData.networkWallets
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-
-      if (response.data && response.data.success) {
-        setWallets(walletData);
-        setSuccessMessage('Wallet addresses updated successfully!');
-        setTimeout(() => setSuccessMessage(''), 5000);
-      }
-    } catch (err) {
-      console.error('Error saving wallet addresses:', err);
-      setError('Failed to save wallet addresses. Please try again.');
-    }
-  };
-  
   // Format transaction hash for display
   const formatTxHash = (hash) => {
     if (!hash) return '-';
@@ -1341,15 +1338,6 @@ const TransactionFees = () => {
             <p className='font-bold text-3xl'>Transaction Fees</p>
           </div>
           <p className='text-lg text-gray-600 pt-2'>Monitor and manage your platform revenue from transaction fees.</p>
-        </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={() => setShowWalletModal(true)}
-            className='bg-gray-600 text-white px-4 py-2 rounded-lg flex gap-x-2 items-center hover:bg-gray-700'
-          >
-            <Wallet size={18}/> 
-            Manage Wallets
-          </button>
         </div>
       </div>
 
@@ -1854,15 +1842,6 @@ const TransactionFees = () => {
           </div>
         )}
       </div>
-
-      {/* Wallet Management Modal */}
-      <WalletModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-        onSave={handleSaveWallets}
-        wallets={wallets}
-        networks={networks}
-      />
 
       {/* Copy Success Notification */}
       {copySuccess && (

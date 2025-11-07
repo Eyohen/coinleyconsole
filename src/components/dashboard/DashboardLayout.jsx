@@ -96,6 +96,7 @@ const DashboardLayout = ({ children }) => {
     { path: "/transactions", title: "Transactions", icon: <HiOutlineCurrencyDollar size={25} /> },
     { path: "/transaction-fees", title: "Transaction Fees", icon: <DollarSign size={20} /> },
     { path: "/settings", title: "Settings", icon: <MdOutlineSettings size={20} /> },
+    { path: "/platform-settings", title: "Platform Settings", icon: <Settings size={20} /> },
 
     // Logout is handled separately
   ];
