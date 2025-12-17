@@ -1,14 +1,14 @@
 // src/components/dashboard/DashboardLayout.jsx
 import React, { useState } from 'react';
-import { 
-  Home, 
-  Mail, 
-  BarChart, 
-  Users, 
-  PieChart, 
-  CreditCard, 
-  Settings, 
-  HelpCircle, 
+import {
+  Home,
+  Mail,
+  BarChart,
+  Users,
+  PieChart,
+  CreditCard,
+  Settings,
+  HelpCircle,
   Bell,
   User,
   Menu,
@@ -16,7 +16,8 @@ import {
   LogOut,
   Sun,
   Moon,
-  DollarSign
+  DollarSign,
+  ArrowRightLeft
 
 } from 'lucide-react';
 import { HiOutlineCurrencyDollar } from "react-icons/hi2";
@@ -93,6 +94,7 @@ const DashboardLayout = ({ children }) => {
   const menuItems = [
     { path: "/dashboard", title: "Dashboard", icon: <Home size={20} /> },
     { path: "/merchants", title: "Merchants", icon: <Users size={25} /> },
+    { path: "/naira-merchants", title: "Naira Merchants", icon: <ArrowRightLeft size={20} /> },
     { path: "/transactions", title: "Transactions", icon: <HiOutlineCurrencyDollar size={25} /> },
     { path: "/transaction-fees", title: "Transaction Fees", icon: <DollarSign size={20} /> },
     { path: "/settings", title: "Settings", icon: <MdOutlineSettings size={20} /> },

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { URL } from '../url';
 import { useAuth } from '../context/AuthContext';
-import { 
-  RiStoreLine, 
-  RiPhoneLine, 
-  RiGlobalLine, 
+import { useDarkMode } from '../context/DarkModeContext';
+import {
+  RiStoreLine,
+  RiPhoneLine,
+  RiGlobalLine,
   RiMapPinLine,
   RiBuilding4Line,
   RiUserSettingsLine,
@@ -23,7 +24,8 @@ import {
   RiDownload2Line,
   RiToggleLine,
   RiToggleFill,
-  RiEyeLine
+  RiEyeLine,
+  RiEyeOffLine
 } from 'react-icons/ri';
 
 const industryOptions = [
@@ -38,6 +40,7 @@ const countryOptions = [
 
 const Settings = () => {
   const { user, login } = useAuth();
+  const { darkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState('business');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -376,19 +379,19 @@ Coinley can send webhooks to your system when payment status changes.
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+        <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Settings</h1>
       </div>
 
       {/* Global messages */}
       {errorMessage && (
-        <div className="mb-6 p-4 bg-red-50 text-red-800 rounded-lg flex items-center">
+        <div className={`mb-6 p-4 rounded-lg flex items-center ${darkMode ? 'bg-red-900/30 border border-red-700 text-red-400' : 'bg-red-50 text-red-800'}`}>
           <RiErrorWarningLine className="text-red-500 mr-2 flex-shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
-      
+
       {successMessage && (
-        <div className="mb-6 p-4 bg-green-50 text-green-800 rounded-lg flex items-center">
+        <div className={`mb-6 p-4 rounded-lg flex items-center ${darkMode ? 'bg-green-900/30 border border-green-700 text-green-400' : 'bg-green-50 text-green-800'}`}>
           <RiCheckboxCircleFill className="text-green-500 mr-2 flex-shrink-0" />
           <span>{successMessage}</span>
         </div>
@@ -402,26 +405,26 @@ Coinley can send webhooks to your system when payment status changes.
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-4">
+            <div className={`rounded-lg shadow-md p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="space-y-1">
-                <button 
+                <button
                   onClick={() => setActiveTab('business')}
                   className={`w-full px-4 py-3 text-left rounded-lg flex items-center ${
-                    activeTab === 'business' 
-                      ? 'bg-[#7042D2] text-white' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                    activeTab === 'business'
+                      ? 'bg-[#7042D2] text-white'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <RiStoreLine className="mr-3 text-lg" />
                   <span>Business Information</span>
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => setActiveTab('api')}
                   className={`w-full px-4 py-3 text-left rounded-lg flex items-center ${
-                    activeTab === 'api' 
-                      ? 'bg-[#7042D2] text-white' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                    activeTab === 'api'
+                      ? 'bg-[#7042D2] text-white'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <RiKeyLine className="mr-3 text-lg" />
@@ -435,17 +438,17 @@ Coinley can send webhooks to your system when payment status changes.
           <div className="lg:col-span-3">
             {/* Business Information */}
             {activeTab === 'business' && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
+              <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className={`text-xl font-semibold mb-6 flex items-center ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                   <RiStoreLine className="mr-2 text-[#7042D2]" />
                   Business Information
                 </h2>
-                
+
                 <form onSubmit={handleBusinessFormSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Business Name */}
                     <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Business Name*
                       </label>
                       <div className="relative">
@@ -457,15 +460,15 @@ Coinley can send webhooks to your system when payment status changes.
                           name="businessName"
                           value={businessForm.businessName}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-900'}`}
                           required
                         />
                       </div>
                     </div>
-                    
+
                     {/* Business Type */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Business Type
                       </label>
                       <div className="relative">
@@ -477,15 +480,15 @@ Coinley can send webhooks to your system when payment status changes.
                           name="businessType"
                           value={businessForm.businessType}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300 text-gray-900'}`}
                           placeholder="e.g., Corporation, LLC, Sole Proprietorship"
                         />
                       </div>
                     </div>
-                    
+
                     {/* Phone */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Phone Number
                       </label>
                       <div className="relative">
@@ -497,15 +500,15 @@ Coinley can send webhooks to your system when payment status changes.
                           name="phone"
                           value={businessForm.phone}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300 text-gray-900'}`}
                           placeholder="+1 (123) 456-7890"
                         />
                       </div>
                     </div>
-                    
+
                     {/* Industry */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Industry
                       </label>
                       <div className="relative">
@@ -516,7 +519,7 @@ Coinley can send webhooks to your system when payment status changes.
                           name="industry"
                           value={businessForm.industry}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] appearance-none bg-none"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] appearance-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                         >
                           <option value="">Select Industry</option>
                           {industryOptions.map(industry => (
@@ -525,10 +528,10 @@ Coinley can send webhooks to your system when payment status changes.
                         </select>
                       </div>
                     </div>
-                    
+
                     {/* Position */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Your Position
                       </label>
                       <div className="relative">
@@ -540,15 +543,15 @@ Coinley can send webhooks to your system when payment status changes.
                           name="position"
                           value={businessForm.position}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300 text-gray-900'}`}
                           placeholder="e.g., CEO, CFO, Manager"
                         />
                       </div>
                     </div>
-                    
+
                     {/* Website */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Website
                       </label>
                       <div className="relative">
@@ -560,15 +563,15 @@ Coinley can send webhooks to your system when payment status changes.
                           name="website"
                           value={businessForm.website}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300 text-gray-900'}`}
                           placeholder="https://yourwebsite.com"
                         />
                       </div>
                     </div>
-                    
+
                     {/* Country */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Country
                       </label>
                       <div className="relative">
@@ -579,7 +582,7 @@ Coinley can send webhooks to your system when payment status changes.
                           name="country"
                           value={businessForm.country}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] appearance-none bg-none"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] appearance-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                         >
                           <option value="">Select Country</option>
                           {countryOptions.map(country => (
@@ -588,10 +591,10 @@ Coinley can send webhooks to your system when payment status changes.
                         </select>
                       </div>
                     </div>
-                    
+
                     {/* State/Province */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         State/Province
                       </label>
                       <div className="relative">
@@ -603,15 +606,15 @@ Coinley can send webhooks to your system when payment status changes.
                           name="state"
                           value={businessForm.state}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300 text-gray-900'}`}
                           placeholder="e.g., California, Ontario"
                         />
                       </div>
                     </div>
-                    
+
                     {/* City */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         City
                       </label>
                       <div className="relative">
@@ -623,14 +626,14 @@ Coinley can send webhooks to your system when payment status changes.
                           name="city"
                           value={businessForm.city}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-900'}`}
                         />
                       </div>
                     </div>
-                    
+
                     {/* Postal/ZIP Code */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Postal/ZIP Code
                       </label>
                       <div className="relative">
@@ -642,14 +645,14 @@ Coinley can send webhooks to your system when payment status changes.
                           name="postal"
                           value={businessForm.postal}
                           onChange={handleBusinessFormChange}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-900'}`}
                         />
                       </div>
                     </div>
-                    
+
                     {/* Address */}
                     <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Street Address
                       </label>
                       <div className="relative">
@@ -661,13 +664,13 @@ Coinley can send webhooks to your system when payment status changes.
                           value={businessForm.address}
                           onChange={handleBusinessFormChange}
                           rows="3"
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2]"
+                          className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#7042D2] ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300 text-gray-900'}`}
                           placeholder="Street address, Suite/Apt #, etc."
                         ></textarea>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-8 flex justify-end">
                     <button
                       type="submit"
@@ -692,24 +695,24 @@ Coinley can send webhooks to your system when payment status changes.
             {activeTab === 'api' && (
               <div className="space-y-6">
                 {/* API Keys Section */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-6 flex items-center">
+                <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <h2 className={`text-xl font-semibold mb-6 flex items-center ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     <RiKeyLine className="mr-2 text-[#7042D2]" />
                     API Keys
                   </h2>
-                  
-                  <div className="bg-gray-50 p-4 mb-6 rounded-lg text-sm text-gray-600 flex items-start">
+
+                  <div className={`p-4 mb-6 rounded-lg text-sm flex items-start ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
                     <RiInformationLine className="text-[#7042D2] mt-1 mr-2 flex-shrink-0" />
                     <p>
                       Your API keys grant access to your account. Never share these keys publicly or with unauthorized individuals.
                       If you believe your keys have been compromised, reset them immediately.
                     </p>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {/* API Key */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         API Key
                       </label>
                       <div className="flex items-center">
@@ -720,13 +723,13 @@ Coinley can send webhooks to your system when payment status changes.
                           <input
                             type="text"
                             value={merchantData?.apiKey || ''}
-                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none"
+                            className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}
                             readOnly
                           />
                         </div>
-                        <button 
+                        <button
                           onClick={() => copyToClipboard(merchantData?.apiKey || '', 'key')}
-                          className="ml-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none"
+                          className={`ml-2 px-3 py-2 rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                         >
                           <div className="flex items-center">
                             <RiFileCopyLine className="mr-1" />
@@ -735,10 +738,10 @@ Coinley can send webhooks to your system when payment status changes.
                         </button>
                       </div>
                     </div>
-                    
+
                     {/* API Secret */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         API Secret
                       </label>
                       <div className="flex items-center">
@@ -749,7 +752,7 @@ Coinley can send webhooks to your system when payment status changes.
                           <input
                             type={showSecretKey ? "text" : "password"}
                             value={merchantData?.apiSecret || ''}
-                            className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none"
+                            className={`block w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}
                             readOnly
                           />
                           <button
@@ -764,9 +767,9 @@ Coinley can send webhooks to your system when payment status changes.
                             )}
                           </button>
                         </div>
-                        <button 
+                        <button
                           onClick={() => copyToClipboard(merchantData?.apiSecret || '', 'secret')}
-                          className="ml-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none"
+                          className={`ml-2 px-3 py-2 rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                         >
                           <div className="flex items-center">
                             <RiFileCopyLine className="mr-1" />
@@ -775,13 +778,13 @@ Coinley can send webhooks to your system when payment status changes.
                         </button>
                       </div>
                     </div>
-                    
+
                     {/* Reset API Keys Button */}
                     <div className="mt-6">
                       <button
                         onClick={handleResetApiKeys}
                         disabled={updating}
-                        className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 focus:outline-none flex items-center"
+                        className={`px-4 py-2 border border-red-500 text-red-500 rounded-md focus:outline-none flex items-center ${darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50'}`}
                       >
                         {updating ? (
                           <>
@@ -795,7 +798,7 @@ Coinley can send webhooks to your system when payment status changes.
                           </>
                         )}
                       </button>
-                      <p className="mt-2 text-xs text-gray-500">
+                      <p className={`mt-2 text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                         Warning: Resetting your API keys will invalidate all existing keys. You will need to update all your integrations.
                       </p>
                     </div>
@@ -803,45 +806,45 @@ Coinley can send webhooks to your system when payment status changes.
                 </div>
                 
                 {/* Mode Settings */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-6 flex items-center">
+                <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <h2 className={`text-xl font-semibold mb-6 flex items-center ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     <RiToggleLine className="mr-2 text-[#7042D2]" />
                     API Mode
                   </h2>
-                  
+
                   <form onSubmit={handleApiFormSubmit}>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className={`flex items-center justify-between p-4 border rounded-lg ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                         <div>
-                          <h3 className="font-medium text-gray-800">Test Mode</h3>
-                          <p className="text-sm text-gray-500">
+                          <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>Test Mode</h3>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             Use test mode to simulate transactions without processing real payments.
                           </p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             name="testMode"
-                            checked={apiForm.testMode} 
+                            checked={apiForm.testMode}
                             onChange={handleApiFormChange}
-                            className="sr-only peer" 
+                            className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7042D2]"></div>
+                          <div className={`w-11 h-6 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7042D2] ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </label>
                       </div>
-                      
-                      <div className="p-4 bg-yellow-50 text-yellow-800 rounded-lg text-sm flex items-start">
-                        <RiInformationLine className="text-yellow-600 mt-1 mr-2 flex-shrink-0" />
+
+                      <div className={`p-4 rounded-lg text-sm flex items-start ${darkMode ? 'bg-yellow-900/30 border border-yellow-700 text-yellow-400' : 'bg-yellow-50 text-yellow-800'}`}>
+                        <RiInformationLine className={`mt-1 mr-2 flex-shrink-0 ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
                         <div>
                           <p className="font-medium">Current mode: {apiForm.testMode ? 'Test' : 'Live'}</p>
                           <p className="mt-1">
-                            {apiForm.testMode 
-                              ? 'You are in test mode. No real transactions will be processed.' 
+                            {apiForm.testMode
+                              ? 'You are in test mode. No real transactions will be processed.'
                               : 'You are in live mode. All transactions will be processed with real funds.'}
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="mt-6 flex justify-end">
                         <button
                           type="submit"
@@ -863,17 +866,17 @@ Coinley can send webhooks to your system when payment status changes.
                 </div>
                 
                 {/* Documentation */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-6 flex items-center">
+                <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <h2 className={`text-xl font-semibold mb-6 flex items-center ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     <RiFileTextLine className="mr-2 text-[#7042D2]" />
                     API Documentation
                   </h2>
-                  
-                  <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
+
+                  <div className={`p-6 border rounded-lg ${darkMode ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium text-gray-800">Integration Guide</h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>Integration Guide</h3>
+                        <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           Detailed documentation for integrating Coinley payment gateway with your application.
                         </p>
                       </div>
@@ -885,18 +888,18 @@ Coinley can send webhooks to your system when payment status changes.
                         <span>Download</span>
                       </button>
                     </div>
-                    
-                    <div className="mt-6 border-t border-gray-200 pt-4">
-                      <h4 className="font-medium text-gray-700 mb-2">Quick Start Guide</h4>
-                      <ol className="list-decimal list-inside text-sm text-gray-600 space-y-2">
+
+                    <div className={`mt-6 border-t pt-4 ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                      <h4 className={`font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Quick Start Guide</h4>
+                      <ol className={`list-decimal list-inside text-sm space-y-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <li>Use your API key and secret for authentication</li>
-                        <li>Create a payment with the <code className="bg-gray-200 px-1 py-0.5 rounded">/api/payments/create</code> endpoint</li>
+                        <li>Create a payment with the <code className={`px-1 py-0.5 rounded ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>/api/payments/create</code> endpoint</li>
                         <li>Redirect your customer to the payment URL</li>
                         <li>Configure your webhook to receive payment updates</li>
                       </ol>
-                      
-                      <div className="mt-4 p-3 bg-gray-100 rounded-md">
-                        <p className="text-xs text-gray-500 mb-1">Example API Request:</p>
+
+                      <div className={`mt-4 p-3 rounded-md ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        <p className={`text-xs mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Example API Request:</p>
                         <pre className="text-xs overflow-x-auto p-2 bg-gray-800 text-green-400 rounded">
 {`POST ${URL}/api/payments/create
 x-api-key: ${merchantData?.apiKey || 'your_api_key'}
@@ -912,27 +915,27 @@ x-api-secret: ${merchantData?.apiSecret || 'your_api_secret'}
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Webhooks (placeholder for future implementation) */}
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold flex items-center">
+                    <h2 className={`text-xl font-semibold flex items-center ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                       <RiShieldLine className="mr-2 text-[#7042D2]" />
                       Webhooks
                     </h2>
-                    
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+
+                    <span className={`px-2 py-1 text-xs rounded-full ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
                       Coming Soon
                     </span>
                   </div>
-                  
-                  <p className="text-gray-500 mb-6">
+
+                  <p className={`mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Webhooks allow your application to receive real-time updates about payment status changes.
                     This feature will be available soon.
                   </p>
-                  
-                  <div className="p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-center">
-                    <p className="text-gray-400">Webhook configuration will be available in a future update</p>
+
+                  <div className={`p-4 border border-dashed rounded-lg text-center ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'}`}>
+                    <p className={darkMode ? 'text-gray-500' : 'text-gray-400'}>Webhook configuration will be available in a future update</p>
                   </div>
                 </div>
               </div>

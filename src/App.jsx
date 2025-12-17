@@ -22,6 +22,7 @@ import Merchants from './pages/Merchants';
 import TransactionFees from './pages/TransactionFees';
 import Transactions from './pages/Transactions';
 import PlatformSettings from './pages/PlatformSettings';
+import NairaMerchants from './pages/NairaMerchants';
 
 
 
@@ -86,7 +87,11 @@ function App() {
             </DashboardLayout>
           } />
 
-
+          <Route path="/naira-merchants" element={
+            <DashboardLayout>
+              <NairaMerchants />
+            </DashboardLayout>
+          } />
 
           {/* <Route path="/" element={<HomePage />} /> */}
           <Route path="/" element={<Login />} />

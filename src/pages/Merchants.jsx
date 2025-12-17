@@ -1133,7 +1133,7 @@ const Merchants = () => {
   
   // Format fee percentage for display
   const formatFeePercentage = (feePercentage) => {
-    if (!feePercentage && feePercentage !== 0) return '1.75%'; // Default
+    if (!feePercentage && feePercentage !== 0) return '1%'; // Default
     return `${(feePercentage * 100).toFixed(2)}%`;
   };
   
