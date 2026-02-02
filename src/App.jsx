@@ -23,6 +23,7 @@ import TransactionFees from './pages/TransactionFees';
 import Transactions from './pages/Transactions';
 import PlatformSettings from './pages/PlatformSettings';
 import NairaMerchants from './pages/NairaMerchants';
+import SweepManagement from './pages/SweepManagement';
 
 
 
@@ -90,6 +91,12 @@ function App() {
           <Route path="/naira-merchants" element={
             <DashboardLayout>
               <NairaMerchants />
+            </DashboardLayout>
+          } />
+
+          <Route path="/sweep-management" element={
+            <DashboardLayout>
+              <SweepManagement />
             </DashboardLayout>
           } />
 

@@ -17,7 +17,8 @@ import {
   Sun,
   Moon,
   DollarSign,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Wallet
 
 } from 'lucide-react';
 import { HiOutlineCurrencyDollar } from "react-icons/hi2";
@@ -97,6 +98,7 @@ const DashboardLayout = ({ children }) => {
     { path: "/naira-merchants", title: "Naira Merchants", icon: <ArrowRightLeft size={20} /> },
     { path: "/transactions", title: "Transactions", icon: <HiOutlineCurrencyDollar size={25} /> },
     { path: "/transaction-fees", title: "Transaction Fees", icon: <DollarSign size={20} /> },
+    { path: "/sweep-management", title: "Sweep Management", icon: <Wallet size={20} /> },
     { path: "/settings", title: "Settings", icon: <MdOutlineSettings size={20} /> },
     { path: "/platform-settings", title: "Platform Settings", icon: <Settings size={20} /> },
 
