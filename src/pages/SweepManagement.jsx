@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
 import SweeperBalances from '../components/SweeperBalances';
 import FailedSweepsTable from '../components/FailedSweepsTable';
+import SweepGasAnalytics from '../components/SweepGasAnalytics';
 
 // Bulk Retry Confirmation Modal
 const BulkRetryModal = ({ isOpen, onClose, onConfirm, selectedCount, retrying }) => {
@@ -314,6 +315,9 @@ const SweepManagement = () => {
         loading={balancesLoading}
         onRefresh={fetchBalances}
       />
+
+      {/* Gas Analytics Component */}
+      <SweepGasAnalytics />
 
       {/* Failed Sweeps Table Component */}
       <FailedSweepsTable
