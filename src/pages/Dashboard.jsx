@@ -664,21 +664,22 @@ const Dashboard = () => {
     monthlyStats: []
   });
   
-  const [timeframe, setTimeframe] = useState('last7Days');
+  const [timeframe, setTimeframe] = useState('allTime');
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Fee processing states
   const [feeProcessing, setFeeProcessing] = useState(false);
   const [pendingFeesCount, setPendingFeesCount] = useState(0);
   const [failedFeesCount, setFailedFeesCount] = useState(0);
 
   // Fetch dashboard data from admin API
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (selectedTimeframe = timeframe) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await axios.get(`${URL}/api/admin/dashboard`, {
+        params: { timeframe: selectedTimeframe },
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -788,6 +789,7 @@ const Dashboard = () => {
   // Handle timeframe change
   const handleTimeframeChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
+    fetchDashboardData(newTimeframe);
   };
   
   // Format currency for display
@@ -931,11 +933,23 @@ const Dashboard = () => {
       {/* Data Controls */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex space-x-2">
-          <button 
+          <button
+            onClick={() => handleTimeframeChange('allTime')}
+            className={`px-3 py-2 rounded-md text-sm font-medium ${
+              timeframe === 'allTime'
+                ? 'bg-[#7042D2] text-white'
+                : darkMode
+                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            All Time
+          </button>
+          <button
             onClick={() => handleTimeframeChange('last7Days')}
             className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'last7Days' 
-                ? 'bg-[#7042D2] text-white' 
+              timeframe === 'last7Days'
+                ? 'bg-[#7042D2] text-white'
                 : darkMode
                   ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
@@ -943,11 +957,11 @@ const Dashboard = () => {
           >
             Last 7 Days
           </button>
-          <button 
+          <button
             onClick={() => handleTimeframeChange('last30Days')}
             className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'last30Days' 
-                ? 'bg-[#7042D2] text-white' 
+              timeframe === 'last30Days'
+                ? 'bg-[#7042D2] text-white'
                 : darkMode
                   ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
@@ -955,11 +969,11 @@ const Dashboard = () => {
           >
             Last 30 Days
           </button>
-          <button 
+          <button
             onClick={() => handleTimeframeChange('last90Days')}
             className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'last90Days' 
-                ? 'bg-[#7042D2] text-white' 
+              timeframe === 'last90Days'
+                ? 'bg-[#7042D2] text-white'
                 : darkMode
                   ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
