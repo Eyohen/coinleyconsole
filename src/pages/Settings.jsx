@@ -25,7 +25,11 @@ import {
   RiToggleLine,
   RiToggleFill,
   RiEyeLine,
-  RiEyeOffLine
+  RiEyeOffLine,
+  RiSettings4Line,
+  RiWalletLine,
+  RiPercentLine,
+  RiSave3Line
 } from 'react-icons/ri';
 
 const industryOptions = [
@@ -69,6 +73,40 @@ const Settings = () => {
   const [apiForm, setApiForm] = useState({
     testMode: false
   });
+
+  // Platform Settings state
+  const [platformSettings, setPlatformSettings] = useState(null);
+  const [platformLoading, setPlatformLoading] = useState(false);
+  const [platformSaving, setPlatformSaving] = useState(false);
+  const [defaultFeePercentage, setDefaultFeePercentage] = useState('1');
+  const [feeWallets, setFeeWallets] = useState({
+    defaultFeeWallet: '',
+    ethereum: '',
+    bsc: '',
+    polygon: '',
+    arbitrum: '',
+    optimism: '',
+    avalanche: '',
+    base: '',
+    celo: '',
+    tron: '',
+    solana: '',
+    algorand: ''
+  });
+
+  const networkInfo = {
+    ethereum: { name: 'Ethereum', format: '0x... (42 chars)' },
+    bsc: { name: 'Binance Smart Chain', format: '0x... (42 chars)' },
+    polygon: { name: 'Polygon', format: '0x... (42 chars)' },
+    arbitrum: { name: 'Arbitrum', format: '0x... (42 chars)' },
+    optimism: { name: 'Optimism', format: '0x... (42 chars)' },
+    avalanche: { name: 'Avalanche', format: '0x... (42 chars)' },
+    base: { name: 'Base', format: '0x... (42 chars)' },
+    celo: { name: 'Celo', format: '0x... (42 chars)' },
+    tron: { name: 'TRON', format: 'T... (34 chars)' },
+    solana: { name: 'Solana', format: 'Base58 (32-44 chars)' },
+    algorand: { name: 'Algorand', format: 'Base32 (58 chars)' }
+  };
 
   // Initialize admin data from auth context
   useEffect(() => {
@@ -280,6 +318,108 @@ const Settings = () => {
       });
   };
 
+  // Fetch platform settings
+  const fetchPlatformSettings = async () => {
+    setPlatformLoading(true);
+    setErrorMessage('');
+    try {
+      const response = await axios.get(`${URL}/api/admin/settings/platform`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+
+      if (response.data.success) {
+        const { settings } = response.data;
+        setPlatformSettings(settings);
+
+        // Populate default fee percentage (convert decimal to percentage for display)
+        const feeAsPercent = settings.defaultFeePercentage
+          ? (parseFloat(settings.defaultFeePercentage) * 100).toString()
+          : '1';
+        setDefaultFeePercentage(feeAsPercent);
+
+        // Populate fee wallets
+        setFeeWallets({
+          defaultFeeWallet: settings.defaultFeeWallet || '',
+          ethereum: settings.feeWalletAddresses?.ethereum || '',
+          bsc: settings.feeWalletAddresses?.bsc || '',
+          polygon: settings.feeWalletAddresses?.polygon || '',
+          arbitrum: settings.feeWalletAddresses?.arbitrum || '',
+          optimism: settings.feeWalletAddresses?.optimism || '',
+          avalanche: settings.feeWalletAddresses?.avalanche || '',
+          base: settings.feeWalletAddresses?.base || '',
+          celo: settings.feeWalletAddresses?.celo || '',
+          tron: settings.feeWalletAddresses?.tron || '',
+          solana: settings.feeWalletAddresses?.solana || '',
+          algorand: settings.feeWalletAddresses?.algorand || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching platform settings:', error);
+      setErrorMessage(error.response?.data?.error || 'Failed to load platform settings');
+    } finally {
+      setPlatformLoading(false);
+    }
+  };
+
+  // Save platform settings
+  const handleSavePlatformSettings = async () => {
+    setPlatformSaving(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const { defaultFeeWallet, ...networkWallets } = feeWallets;
+
+      // Convert percentage to decimal for storage (e.g., 1% -> 0.01)
+      const feeAsDecimal = parseFloat(defaultFeePercentage) / 100;
+
+      // Validate fee percentage
+      if (isNaN(feeAsDecimal) || feeAsDecimal < 0.001 || feeAsDecimal > 0.10) {
+        setErrorMessage('Fee percentage must be between 0.1% and 10%');
+        setPlatformSaving(false);
+        return;
+      }
+
+      const updates = {
+        defaultFeeWallet,
+        feeWalletAddresses: networkWallets,
+        defaultFeePercentage: feeAsDecimal
+      };
+
+      const response = await axios.put(
+        `${URL}/api/admin/settings/platform`,
+        updates,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage('Platform settings updated successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        await fetchPlatformSettings(); // Refresh settings
+      }
+    } catch (error) {
+      console.error('Error saving platform settings:', error);
+      setErrorMessage(error.response?.data?.error || 'Failed to save platform settings');
+    } finally {
+      setPlatformSaving(false);
+    }
+  };
+
+  // Handle fee wallet input change
+  const handleFeeWalletChange = (field, value) => {
+    setFeeWallets(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   // Download API documentation
   const downloadApiDocumentation = () => {
     // Create dummy content for the API documentation
@@ -429,6 +569,23 @@ Coinley can send webhooks to your system when payment status changes.
                 >
                   <RiKeyLine className="mr-3 text-lg" />
                   <span>API & Integration</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('platform');
+                    if (!platformSettings) {
+                      fetchPlatformSettings();
+                    }
+                  }}
+                  className={`w-full px-4 py-3 text-left rounded-lg flex items-center ${
+                    activeTab === 'platform'
+                      ? 'bg-[#7042D2] text-white'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <RiSettings4Line className="mr-3 text-lg" />
+                  <span>Platform Settings</span>
                 </button>
               </div>
             </div>
@@ -938,6 +1095,160 @@ x-api-secret: ${merchantData?.apiSecret || 'your_api_secret'}
                     <p className={darkMode ? 'text-gray-500' : 'text-gray-400'}>Webhook configuration will be available in a future update</p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Platform Settings */}
+            {activeTab === 'platform' && (
+              <div className="space-y-6">
+                {/* Header with Refresh */}
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className={`text-xl font-semibold flex items-center ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      <RiSettings4Line className="mr-2 text-[#7042D2]" />
+                      Platform Settings
+                    </h2>
+                    <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Configure fee wallet addresses and transaction fees across blockchain networks
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchPlatformSettings}
+                    disabled={platformLoading}
+                    className={`flex items-center gap-2 px-3 py-2 text-[#7042D2] border border-[#7042D2] rounded-lg transition-colors ${darkMode ? 'hover:bg-purple-900/30' : 'hover:bg-purple-50'}`}
+                  >
+                    <RiRefreshLine className={platformLoading ? 'animate-spin' : ''} />
+                    Refresh
+                  </button>
+                </div>
+
+                {platformLoading ? (
+                  <div className="flex justify-center py-16">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7042D2]"></div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Info Card */}
+                    <div className={`p-4 rounded-lg ${darkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
+                      <div className="flex items-start">
+                        <RiInformationLine className="text-blue-500 mr-3 mt-1 flex-shrink-0 text-xl" />
+                        <div>
+                          <h3 className={`font-medium mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`}>Important Information</h3>
+                          <ul className={`text-sm space-y-1 ${darkMode ? 'text-blue-300' : 'text-blue-800'}`}>
+                            <li>• Fee wallet addresses receive transaction fees from customer payments</li>
+                            <li>• Each network can have a different wallet address</li>
+                            <li>• If a network-specific wallet is not set, the default wallet will be used</li>
+                            <li>• Ensure wallet addresses are correct - sending to wrong addresses cannot be reversed</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Default Transaction Fee */}
+                    <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        <RiPercentLine className="text-[#7042D2]" />
+                        Default Transaction Fee
+                      </h3>
+                      <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Platform-wide default transaction fee applied to all merchants without a custom fee.
+                      </p>
+
+                      <div className="max-w-xs">
+                        <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Fee Percentage
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            max="10"
+                            value={defaultFeePercentage}
+                            onChange={(e) => setDefaultFeePercentage(e.target.value)}
+                            className={`w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-[#7042D2] focus:border-transparent text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                          />
+                          <span className={`absolute right-4 top-1/2 -translate-y-1/2 font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>%</span>
+                        </div>
+                        <p className={`mt-2 text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                          Enter a value between 0.1% and 10%. Merchants receive {(100 - parseFloat(defaultFeePercentage || 0)).toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Default Fee Wallet */}
+                    <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        <RiWalletLine className="text-[#7042D2]" />
+                        Default Fee Wallet
+                      </h3>
+                      <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        This address will be used for all networks that don't have a specific wallet configured.
+                      </p>
+
+                      <div>
+                        <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Default Wallet Address
+                        </label>
+                        <input
+                          type="text"
+                          value={feeWallets.defaultFeeWallet}
+                          onChange={(e) => handleFeeWalletChange('defaultFeeWallet', e.target.value)}
+                          placeholder="0x..."
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#7042D2] focus:border-transparent font-mono text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900'}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Network-Specific Fee Wallets */}
+                    <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        <RiWalletLine className="text-[#7042D2]" />
+                        Network-Specific Fee Wallets
+                      </h3>
+                      <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Configure specific wallet addresses for each blockchain network.
+                      </p>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {Object.entries(networkInfo).map(([network, info]) => (
+                          <div key={network} className={`border rounded-lg p-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              {info.name}
+                              <span className={`text-xs ml-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>({info.format})</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={feeWallets[network]}
+                              onChange={(e) => handleFeeWalletChange(network, e.target.value)}
+                              placeholder={`Enter ${info.name} wallet address`}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#7042D2] focus:border-transparent font-mono text-xs ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900'}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleSavePlatformSettings}
+                        disabled={platformSaving}
+                        className="flex items-center gap-2 px-6 py-3 bg-[#7042D2] text-white rounded-lg hover:bg-opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <RiSave3Line className="text-xl" />
+                        {platformSaving ? 'Saving...' : 'Save Platform Settings'}
+                      </button>
+                    </div>
+
+                    {/* Last Updated Info */}
+                    {platformSettings && platformSettings.updatedAt && (
+                      <div className={`text-sm text-right ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Last updated: {new Date(platformSettings.updatedAt).toLocaleString()}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>

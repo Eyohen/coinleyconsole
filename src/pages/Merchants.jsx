@@ -692,7 +692,7 @@ const FeeUpdateModal = ({ isOpen, onClose, merchant, onConfirm }) => {
       // Convert decimal to percentage for display
       const currentFee = merchant.customFeePercentage ? 
         (merchant.customFeePercentage * 100).toFixed(2) : 
-        '1.75';
+        '1.0';
       setFeePercentage(currentFee);
       setError('');
     }
@@ -768,7 +768,7 @@ const FeeUpdateModal = ({ isOpen, onClose, merchant, onConfirm }) => {
                     ? 'bg-gray-700 border-gray-600 text-white' 
                     : 'bg-white border-gray-300 text-gray-800'
                 }`}
-                placeholder="1.75"
+                placeholder="1.0"
                 required
               />
               <span className={`absolute right-3 top-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -776,7 +776,7 @@ const FeeUpdateModal = ({ isOpen, onClose, merchant, onConfirm }) => {
               </span>
             </div>
             <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Default: 1.75% • Range: 0% - 100%
+              Default: 1.0% • Range: 0% - 100%
             </p>
           </div>
 
@@ -1330,6 +1330,7 @@ const Merchants = () => {
                   <th className="px-6 py-3 font-medium">Business Name</th>
                   <th className="px-6 py-3 font-medium">Email</th>
                   <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium">Wallet Address</th>
                   <th className="px-6 py-3 font-medium">Industry</th>
                   <th className="px-6 py-3 font-medium">Country</th>
                   <th className="px-6 py-3 font-medium">Fee</th>
@@ -1354,6 +1355,21 @@ const Merchants = () => {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(merchant.status)}`}>
                         {merchant.status.charAt(0).toUpperCase() + merchant.status.slice(1)}
                       </span>
+                    </td>
+                    <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                      {merchant.walletAddress ? (
+                        <span
+                          className="font-mono text-xs cursor-pointer hover:text-[#7042D2]"
+                          onClick={() => copyToClipboard(merchant.walletAddress)}
+                          title="Click to copy"
+                        >
+                          {`${merchant.walletAddress.substring(0, 6)}...${merchant.walletAddress.substring(merchant.walletAddress.length - 4)}`}
+                        </span>
+                      ) : (
+                        <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          Not set
+                        </span>
+                      )}
                     </td>
                     <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
                       {merchant.industry || 'Not specified'}

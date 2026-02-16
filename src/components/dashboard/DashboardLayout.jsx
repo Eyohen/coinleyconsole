@@ -1,5 +1,5 @@
 // src/components/dashboard/DashboardLayout.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Home,
   Mail,
@@ -16,15 +16,11 @@ import {
   LogOut,
   Sun,
   Moon,
-  DollarSign,
   ArrowRightLeft
-
 } from 'lucide-react';
 import { HiOutlineCurrencyDollar } from "react-icons/hi2";
 import { MdOutlineSettings } from "react-icons/md";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { URL } from '../../url';
 import { useAuth } from '../../context/AuthContext';
 import { useDarkMode } from '../../context/DarkModeContext'; // Use our new context
 import coinleylogo from '../../assets/Logo.png';
@@ -69,14 +65,23 @@ const MenuItem = ({ icon, title, path, collapsed, active, onClick }) => {
 };
 
 const DashboardLayout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, loading } = useAuth();
   const { darkMode, toggleDarkMode } = useDarkMode(); // Use our new context
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname;
   const navigate = useNavigate();
 
-  console.log("layout user", user);
+  // Check authentication on mount and when auth state changes
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+
+    // If no token or not authenticated, redirect to login
+    if (!loading && (!token || !isAuthenticated)) {
+      console.log('Not authenticated - redirecting to login');
+      navigate('/');
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   // Handle logout function
   const handleLogout = () => {
@@ -96,10 +101,7 @@ const DashboardLayout = ({ children }) => {
     { path: "/merchants", title: "Merchants", icon: <Users size={25} /> },
     { path: "/naira-merchants", title: "Naira Merchants", icon: <ArrowRightLeft size={20} /> },
     { path: "/transactions", title: "Transactions", icon: <HiOutlineCurrencyDollar size={25} /> },
-    { path: "/transaction-fees", title: "Transaction Fees", icon: <DollarSign size={20} /> },
     { path: "/settings", title: "Settings", icon: <MdOutlineSettings size={20} /> },
-    { path: "/platform-settings", title: "Platform Settings", icon: <Settings size={20} /> },
-
     // Logout is handled separately
   ];
 
@@ -108,6 +110,20 @@ const DashboardLayout = ({ children }) => {
     const page = menuItems.find(item => item.path === currentPath);
     return page ? page.title : "Dashboard";
   };
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className={`flex h-screen items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7042D2]"></div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>

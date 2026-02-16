@@ -622,9 +622,9 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { 
-  ArrowUp, 
-  ArrowDown, 
+import {
+  ArrowUp,
+  ArrowDown,
   RefreshCw,
   DollarSign,
   AlertCircle,
@@ -640,7 +640,8 @@ import {
   RotateCcw,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Calendar
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -667,19 +668,33 @@ const Dashboard = () => {
   const [timeframe, setTimeframe] = useState('allTime');
   const [refreshing, setRefreshing] = useState(false);
 
+  // Custom date range states
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+
   // Fee processing states
   const [feeProcessing, setFeeProcessing] = useState(false);
   const [pendingFeesCount, setPendingFeesCount] = useState(0);
   const [failedFeesCount, setFailedFeesCount] = useState(0);
 
   // Fetch dashboard data from admin API
-  const fetchDashboardData = async (selectedTimeframe = timeframe) => {
+  const fetchDashboardData = async (selectedTimeframe = timeframe, customStart = null, customEnd = null) => {
     setLoading(true);
     setError(null);
 
     try {
+      // Build params - custom date range takes priority
+      const params = {};
+      if (customStart && customEnd) {
+        params.startDate = customStart;
+        params.endDate = customEnd;
+      } else if (selectedTimeframe !== 'custom') {
+        params.timeframe = selectedTimeframe;
+      }
+
       const response = await axios.get(`${URL}/api/admin/dashboard`, {
-        params: { timeframe: selectedTimeframe },
+        params,
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -789,7 +804,36 @@ const Dashboard = () => {
   // Handle timeframe change
   const handleTimeframeChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
-    fetchDashboardData(newTimeframe);
+    if (newTimeframe === 'custom') {
+      setShowCustomDatePicker(true);
+    } else {
+      setShowCustomDatePicker(false);
+      setStartDate('');
+      setEndDate('');
+      fetchDashboardData(newTimeframe);
+    }
+  };
+
+  // Apply custom date range filter
+  const applyCustomDateRange = () => {
+    if (startDate && endDate) {
+      if (new Date(startDate) > new Date(endDate)) {
+        setError('Start date cannot be after end date');
+        return;
+      }
+      fetchDashboardData('custom', startDate, endDate);
+    } else {
+      setError('Please select both start and end dates');
+    }
+  };
+
+  // Clear custom date range
+  const clearCustomDateRange = () => {
+    setStartDate('');
+    setEndDate('');
+    setShowCustomDatePicker(false);
+    setTimeframe('allTime');
+    fetchDashboardData('allTime');
   };
   
   // Format currency for display
@@ -931,70 +975,153 @@ const Dashboard = () => {
       )}
       
       {/* Data Controls */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex space-x-2">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleTimeframeChange('allTime')}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                timeframe === 'allTime'
+                  ? 'bg-[#7042D2] text-white'
+                  : darkMode
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => handleTimeframeChange('last7Days')}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                timeframe === 'last7Days'
+                  ? 'bg-[#7042D2] text-white'
+                  : darkMode
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => handleTimeframeChange('last30Days')}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                timeframe === 'last30Days'
+                  ? 'bg-[#7042D2] text-white'
+                  : darkMode
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => handleTimeframeChange('last90Days')}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                timeframe === 'last90Days'
+                  ? 'bg-[#7042D2] text-white'
+                  : darkMode
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Last 90 Days
+            </button>
+            <button
+              onClick={() => handleTimeframeChange('custom')}
+              className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${
+                timeframe === 'custom'
+                  ? 'bg-[#7042D2] text-white'
+                  : darkMode
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Calendar size={14} />
+              Custom Range
+            </button>
+          </div>
+
           <button
-            onClick={() => handleTimeframeChange('allTime')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'allTime'
-                ? 'bg-[#7042D2] text-white'
-                : darkMode
-                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium ${
+              darkMode
+                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            All Time
-          </button>
-          <button
-            onClick={() => handleTimeframeChange('last7Days')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'last7Days'
-                ? 'bg-[#7042D2] text-white'
-                : darkMode
-                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Last 7 Days
-          </button>
-          <button
-            onClick={() => handleTimeframeChange('last30Days')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'last30Days'
-                ? 'bg-[#7042D2] text-white'
-                : darkMode
-                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Last 30 Days
-          </button>
-          <button
-            onClick={() => handleTimeframeChange('last90Days')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              timeframe === 'last90Days'
-                ? 'bg-[#7042D2] text-white'
-                : darkMode
-                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Last 90 Days
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            <span>{refreshing ? "Refreshing..." : "Refresh Data"}</span>
           </button>
         </div>
-        
-        <button 
-          onClick={handleRefresh}
-          disabled={refreshing || loading}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium ${
-            darkMode
-              ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-          <span>{refreshing ? "Refreshing..." : "Refresh Data"}</span>
-        </button>
+
+        {/* Custom Date Range Picker */}
+        {showCustomDatePicker && (
+          <div className={`flex flex-wrap items-center gap-4 p-4 rounded-lg ${
+            darkMode ? 'bg-gray-800' : 'bg-white'
+          } shadow-sm`}>
+            <div className="flex items-center gap-2">
+              <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Start Date:
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className={`px-3 py-2 rounded-md text-sm border ${
+                  darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                } focus:outline-none focus:ring-2 focus:ring-[#7042D2] focus:border-transparent`}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                End Date:
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className={`px-3 py-2 rounded-md text-sm border ${
+                  darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                } focus:outline-none focus:ring-2 focus:ring-[#7042D2] focus:border-transparent`}
+              />
+            </div>
+
+            <button
+              onClick={applyCustomDateRange}
+              disabled={!startDate || !endDate}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                !startDate || !endDate
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#7042D2] text-white hover:bg-purple-700'
+              }`}
+            >
+              Apply Filter
+            </button>
+
+            <button
+              onClick={clearCustomDateRange}
+              className={`px-4 py-2 rounded-md text-sm font-medium ${
+                darkMode
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Clear
+            </button>
+
+            {startDate && endDate && (
+              <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Showing data from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Quick Stats - Enhanced with Fee Status */}
@@ -1041,14 +1168,14 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Total Platform Revenue */}
+        {/* Transaction Volume */}
         <div className={`rounded-lg shadow-sm p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center">
             <div className="p-2 rounded-md bg-green-100">
               <DollarSign size={20} className="text-green-600" />
             </div>
             <h3 className={`ml-3 text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-              Platform Revenue
+              Transaction Volume
             </h3>
           </div>
           <div className="flex items-end mt-2 justify-between">
@@ -1230,12 +1357,6 @@ const Dashboard = () => {
           <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             Recent Fee Transactions
           </h2>
-          <Link 
-            to="/transaction-fees"
-            className="text-md border border-gray-300 text-[#7042D2] font-semibold px-3 py-1 rounded-md hover:bg-[#7042D2] hover:text-white transition-colors"
-          >
-            View all fees
-          </Link>
         </div>
         
         {loading ? (
