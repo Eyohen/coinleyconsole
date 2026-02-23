@@ -15,7 +15,10 @@ import {
   RiMailLine,
   RiBuilding4Line,
   RiEyeLine,
-  RiEditLine
+  RiEditLine,
+  RiMoneyDollarCircleLine,
+  RiSendPlaneLine,
+  RiExchangeDollarLine
 } from 'react-icons/ri';
 
 const NairaMerchants = () => {
@@ -60,6 +63,15 @@ const NairaMerchants = () => {
   });
   const [createErrors, setCreateErrors] = useState({});
 
+  // Disbursement state
+  const [ercasBalance, setErcasBalance] = useState(null);
+  const [pendingSettlements, setPendingSettlements] = useState([]);
+  const [loadingDisbursement, setLoadingDisbursement] = useState(false);
+  const [showDisbursementModal, setShowDisbursementModal] = useState(false);
+  const [disbursementMerchant, setDisbursementMerchant] = useState(null);
+  const [disbursementAmount, setDisbursementAmount] = useState('');
+  const [disbursementNarration, setDisbursementNarration] = useState('');
+
   const token = localStorage.getItem('access_token');
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -75,7 +87,11 @@ const NairaMerchants = () => {
   useEffect(() => {
     fetchNairaMerchants();
     fetchAllMerchants();
-  }, []);
+    if (activeTab === 'disbursements') {
+      fetchErcasBalance();
+      fetchPendingSettlements();
+    }
+  }, [activeTab]);
 
   const fetchNairaMerchants = async () => {
     try {
@@ -253,6 +269,103 @@ const NairaMerchants = () => {
     }
   };
 
+  // Activate bank account
+  const handleActivateBankAccount = async (merchantId) => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await axios.post(
+        `${BASE_URL}/api/admin/naira-merchants/${merchantId}/activate-bank`,
+        {},
+        { headers }
+      );
+
+      if (response.data?.success) {
+        setSuccess(`Bank account activated: ${response.data.bankAccount.bankName} - ${response.data.bankAccount.accountNumber}`);
+        fetchNairaMerchants();
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to activate bank account');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Disbursement functions
+  const fetchErcasBalance = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/disbursement/balance`, { headers });
+      if (response.data?.success) {
+        setErcasBalance(response.data.balance);
+      }
+    } catch (err) {
+      console.error('Error fetching ERCAS balance:', err);
+    }
+  };
+
+  const fetchPendingSettlements = async () => {
+    try {
+      setLoadingDisbursement(true);
+      const response = await axios.get(`${BASE_URL}/api/disbursement/pending-settlements`, { headers });
+      if (response.data?.success) {
+        setPendingSettlements(response.data.settlements || []);
+      }
+    } catch (err) {
+      console.error('Error fetching pending settlements:', err);
+    } finally {
+      setLoadingDisbursement(false);
+    }
+  };
+
+  const openDisbursementModal = (merchant, suggestedAmount = '') => {
+    setDisbursementMerchant(merchant);
+    setDisbursementAmount(suggestedAmount.toString());
+    setDisbursementNarration(`Coinley settlement to ${merchant.businessName}`);
+    setShowDisbursementModal(true);
+  };
+
+  const handleInitiateDisbursement = async () => {
+    if (!disbursementMerchant || !disbursementAmount) {
+      setError('Please enter an amount');
+      return;
+    }
+
+    const amount = parseFloat(disbursementAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+
+    try {
+      setLoadingDisbursement(true);
+      setError('');
+
+      const response = await axios.post(
+        `${BASE_URL}/api/disbursement/initiate`,
+        {
+          merchantId: disbursementMerchant.id,
+          amount: amount,
+          narration: disbursementNarration
+        },
+        { headers }
+      );
+
+      if (response.data?.success) {
+        setSuccess(`Disbursement of ₦${amount.toLocaleString()} initiated successfully to ${disbursementMerchant.businessName}. Reference: ${response.data.disbursement?.reference}`);
+        setShowDisbursementModal(false);
+        setDisbursementMerchant(null);
+        setDisbursementAmount('');
+        setDisbursementNarration('');
+        fetchErcasBalance();
+        fetchPendingSettlements();
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to initiate disbursement');
+    } finally {
+      setLoadingDisbursement(false);
+    }
+  };
+
   // Filter merchants based on search
   const filteredMerchants = merchants.filter(merchant =>
     merchant.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -310,7 +423,40 @@ const NairaMerchants = () => {
         </div>
       )}
 
-      {/* Info Card */}
+      {/* Tabs */}
+      <div className={`mb-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <nav className="flex space-x-8">
+          <button
+            onClick={() => setActiveTab('merchants')}
+            className={`py-3 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'merchants'
+                ? 'border-[#7042D2] text-[#7042D2]'
+                : `border-transparent ${textSecondary} hover:text-gray-700 hover:border-gray-300`
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <RiBuilding4Line />
+              Merchants
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('disbursements')}
+            className={`py-3 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'disbursements'
+                ? 'border-[#7042D2] text-[#7042D2]'
+                : `border-transparent ${textSecondary} hover:text-gray-700 hover:border-gray-300`
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <RiMoneyDollarCircleLine />
+              Disbursements
+            </span>
+          </button>
+        </nav>
+      </div>
+
+      {/* Info Card - Only show on merchants tab */}
+      {activeTab === 'merchants' && (
       <div className={`mb-6 p-4 rounded-lg ${darkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
         <h3 className={`font-medium mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`}>
           How Naira Merchants Work
@@ -322,7 +468,11 @@ const NairaMerchants = () => {
           <li>4. Merchant manages their bank account details in their dashboard</li>
         </ul>
       </div>
+      )}
 
+      {/* Merchants Tab Content */}
+      {activeTab === 'merchants' && (
+      <>
       {/* Actions Bar */}
       <div className={`${cardBg} rounded-lg shadow p-4 mb-6`}>
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -421,13 +571,36 @@ const NairaMerchants = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          merchant.bankAccount
-                            ? 'bg-green-100 text-green-800'
-                            : darkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {merchant.bankAccount ? 'Configured' : 'Pending'}
-                        </span>
+                        {merchant.bankAccount ? (
+                          <div>
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              merchant.bankAccount.status === 'active'
+                                ? 'bg-green-100 text-green-800'
+                                : darkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {merchant.bankAccount.status === 'active' ? 'Active' : merchant.bankAccount.status || 'Pending'}
+                            </span>
+                            <p className={`text-xs mt-1 ${textSecondary}`}>
+                              {merchant.bankAccount.bankName} - {merchant.bankAccount.accountNumber?.substring(0, 4)}****
+                            </p>
+                            {merchant.bankAccount.status !== 'active' && (
+                              <button
+                                onClick={() => handleActivateBankAccount(merchant.id)}
+                                disabled={loading}
+                                className="mt-1 flex items-center gap-1 px-2 py-0.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                              >
+                                <RiCheckboxCircleFill className="text-xs" />
+                                Activate
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            darkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            No bank account
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -456,6 +629,208 @@ const NairaMerchants = () => {
           </div>
         )}
       </div>
+      </>
+      )}
+
+      {/* Disbursements Tab Content */}
+      {activeTab === 'disbursements' && (
+        <>
+          {/* Balance Card */}
+          <div className={`${cardBg} rounded-lg shadow p-6 mb-6`}>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h3 className={`text-lg font-semibold ${textPrimary}`}>ERCAS Account Balance</h3>
+                <p className={textSecondary}>Available funds for disbursement</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`text-right ${textPrimary}`}>
+                  <p className="text-3xl font-bold">
+                    ₦{ercasBalance !== null ? Number(ercasBalance).toLocaleString() : '---'}
+                  </p>
+                  <p className={`text-sm ${textSecondary}`}>NGN</p>
+                </div>
+                <button
+                  onClick={fetchErcasBalance}
+                  className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+                >
+                  <RiRefreshLine className={textSecondary} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className={`${cardBg} rounded-lg shadow p-4 mb-6`}>
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <h3 className={`font-medium ${textPrimary}`}>Quick Disbursement</h3>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    fetchErcasBalance();
+                    fetchPendingSettlements();
+                  }}
+                  disabled={loadingDisbursement}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} ${textPrimary}`}
+                >
+                  <RiRefreshLine className={loadingDisbursement ? 'animate-spin' : ''} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Naira Merchants for Disbursement */}
+          <div className={`${cardBg} rounded-lg shadow overflow-hidden`}>
+            <div className={`px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`font-medium ${textPrimary}`}>Naira Merchants</h3>
+              <p className={`text-sm ${textSecondary}`}>Select a merchant to initiate disbursement</p>
+            </div>
+
+            {loadingDisbursement && merchants.length === 0 ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7042D2]"></div>
+              </div>
+            ) : merchants.length === 0 ? (
+              <div className={`text-center py-12 ${textSecondary}`}>
+                <RiMoneyDollarCircleLine className="mx-auto text-4xl mb-3 opacity-50" />
+                <p>No naira merchants found</p>
+                <p className="text-sm mt-1">Add naira merchants from the Merchants tab first</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className={tableHeaderBg}>
+                    <tr>
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Business</th>
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Bank Account</th>
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Status</th>
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${tableBorder}`}>
+                    {merchants.map((merchant) => {
+                      const bankAccount = merchant.BankAccounts?.[0] || merchant.bankAccount;
+                      return (
+                        <tr key={merchant.id} className={tableRowHover}>
+                          <td className={`px-4 py-3 ${textPrimary}`}>
+                            <div>
+                              <p className="font-medium">{merchant.businessName}</p>
+                              <p className={`text-sm ${textSecondary}`}>{merchant.email}</p>
+                            </div>
+                          </td>
+                          <td className={`px-4 py-3 ${textSecondary}`}>
+                            {bankAccount ? (
+                              <div>
+                                <p className={textPrimary}>{bankAccount.bankName}</p>
+                                <p className="text-sm">{bankAccount.accountNumber?.substring(0, 4)}******</p>
+                                <p className="text-sm">{bankAccount.accountName}</p>
+                              </div>
+                            ) : (
+                              <span className="text-yellow-500">Not configured</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              bankAccount
+                                ? 'bg-green-100 text-green-800'
+                                : darkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {bankAccount ? 'Ready' : 'Pending Bank'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => openDisbursementModal(merchant)}
+                              disabled={!bankAccount}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                                bankAccount
+                                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            >
+                              <RiSendPlaneLine />
+                              Disburse
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Disbursement Modal */}
+      {showDisbursementModal && disbursementMerchant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${cardBg} rounded-lg p-6 max-w-md w-full mx-4`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-semibold ${textPrimary}`}>Initiate Disbursement</h3>
+              <button onClick={() => setShowDisbursementModal(false)} className={textSecondary}>
+                <RiCloseLine className="text-xl" />
+              </button>
+            </div>
+
+            <div className={`p-4 rounded-lg mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <p className={`font-medium ${textPrimary}`}>{disbursementMerchant.businessName}</p>
+              {disbursementMerchant.BankAccounts?.[0] && (
+                <div className={`mt-2 text-sm ${textSecondary}`}>
+                  <p>{disbursementMerchant.BankAccounts[0].bankName}</p>
+                  <p>{disbursementMerchant.BankAccounts[0].accountNumber}</p>
+                  <p>{disbursementMerchant.BankAccounts[0].accountName}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${textSecondary}`}>
+                  Amount (NGN)
+                </label>
+                <input
+                  type="number"
+                  value={disbursementAmount}
+                  onChange={(e) => setDisbursementAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className={`w-full px-3 py-2 border rounded-lg ${inputBg}`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${textSecondary}`}>
+                  Narration
+                </label>
+                <input
+                  type="text"
+                  value={disbursementNarration}
+                  onChange={(e) => setDisbursementNarration(e.target.value)}
+                  placeholder="Transfer description"
+                  className={`w-full px-3 py-2 border rounded-lg ${inputBg}`}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => setShowDisbursementModal(false)}
+                className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInitiateDisbursement}
+                disabled={loadingDisbursement || !disbursementAmount}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {loadingDisbursement ? 'Processing...' : 'Send Disbursement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Merchant Modal */}
       {showAddModal && (
