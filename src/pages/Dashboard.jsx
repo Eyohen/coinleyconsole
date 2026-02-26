@@ -1502,9 +1502,16 @@ const Dashboard = () => {
                       {new Date(merchant.createdAt).toLocaleDateString()}
                     </td>
                     <td className={`py-4 font-mono text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {merchant.walletAddress 
-                        ? `${merchant.walletAddress.substring(0, 8)}...${merchant.walletAddress.substring(merchant.walletAddress.length - 6)}` 
-                        : 'Not set'}
+                      {(() => {
+                        const addr = merchant.walletAddress
+                          || merchant.solWalletAddress
+                          || (merchant.merchantWallets && typeof merchant.merchantWallets === 'object'
+                            ? Object.values(merchant.merchantWallets).map(d => typeof d === 'object' ? d.address : d).find(a => a && a.trim())
+                            : null);
+                        return addr
+                          ? `${addr.substring(0, 8)}...${addr.substring(addr.length - 6)}`
+                          : 'Not set';
+                      })()}
                     </td>
                   </tr>
                 ))}
