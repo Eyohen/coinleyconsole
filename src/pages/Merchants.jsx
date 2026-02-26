@@ -1357,19 +1357,52 @@ const Merchants = () => {
                       </span>
                     </td>
                     <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                      {merchant.walletAddress ? (
-                        <span
-                          className="font-mono text-xs cursor-pointer hover:text-[#7042D2]"
-                          onClick={() => copyToClipboard(merchant.walletAddress)}
-                          title="Click to copy"
-                        >
-                          {`${merchant.walletAddress.substring(0, 6)}...${merchant.walletAddress.substring(merchant.walletAddress.length - 4)}`}
-                        </span>
-                      ) : (
-                        <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          Not set
-                        </span>
-                      )}
+                      {(() => {
+                        // Collect all configured wallet addresses from all sources
+                        const wallets = [];
+                        if (merchant.walletAddress) {
+                          wallets.push({ network: 'ETH', address: merchant.walletAddress });
+                        }
+                        if (merchant.solWalletAddress) {
+                          wallets.push({ network: 'SOL', address: merchant.solWalletAddress });
+                        }
+                        if (merchant.merchantWallets && typeof merchant.merchantWallets === 'object') {
+                          Object.entries(merchant.merchantWallets).forEach(([network, data]) => {
+                            const addr = typeof data === 'object' ? data.address : data;
+                            if (addr && addr.trim()) {
+                              // Skip if already covered by legacy fields
+                              if (network === 'ethereum' && merchant.walletAddress) return;
+                              if (network === 'solana' && merchant.solWalletAddress) return;
+                              wallets.push({ network: network.toUpperCase().slice(0, 4), address: addr });
+                            }
+                          });
+                        }
+
+                        if (wallets.length > 0) {
+                          const first = wallets[0];
+                          return (
+                            <span className="flex items-center gap-1">
+                              <span
+                                className="font-mono text-xs cursor-pointer hover:text-[#7042D2]"
+                                onClick={() => copyToClipboard(first.address)}
+                                title={`${first.network} - Click to copy`}
+                              >
+                                {`${first.address.substring(0, 6)}...${first.address.substring(first.address.length - 4)}`}
+                              </span>
+                              {wallets.length > 1 && (
+                                <span className="text-xs text-[#7042D2] font-medium">
+                                  +{wallets.length - 1}
+                                </span>
+                              )}
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            Not set
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
                       {merchant.industry || 'Not specified'}
