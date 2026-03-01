@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import { URL } from '../url';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
@@ -11,7 +12,9 @@ import {
   RiSave3Line,
   RiRefreshLine,
   RiSettings4Line,
-  RiPercentLine
+  RiPercentLine,
+  RiLinksLine,
+  RiExternalLinkLine,
 } from 'react-icons/ri';
 
 const PlatformSettings = () => {
@@ -40,6 +43,51 @@ const PlatformSettings = () => {
     solana: '',
     algorand: ''
   });
+
+  // On-chain sync state
+  const [syncing, setSyncing] = useState(false);
+  const [syncResults, setSyncResults] = useState(null);
+
+  const EXPLORER_TX_URLS = {
+    base:      'https://basescan.org/tx/',
+    bsc:       'https://bscscan.com/tx/',
+    polygon:   'https://polygonscan.com/tx/',
+    arbitrum:  'https://arbiscan.io/tx/',
+    optimism:  'https://optimistic.etherscan.io/tx/',
+    avalanche: 'https://snowtrace.io/tx/',
+  };
+
+  const handleSyncOnChain = async () => {
+    setSyncing(true);
+    setSyncResults(null);
+    try {
+      const response = await axios.post(
+        `${URL}/api/admin/platform/wallet/sync-onchain`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        }
+      );
+      if (response.data.success) {
+        setSyncResults(response.data.results);
+        const updated = response.data.results.filter(r => r.success).length;
+        const skipped = response.data.results.filter(r => r.skipped).length;
+        const failed  = response.data.results.filter(r => !r.success && !r.skipped).length;
+        if (failed === 0) {
+          toast.success(`Sync complete: ${updated} updated, ${skipped} already set`);
+        } else {
+          toast.error(`Sync finished with ${failed} error(s)`);
+        }
+      }
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Failed to sync on-chain';
+      toast.error(msg);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const networkInfo = {
     ethereum: { name: 'Ethereum', format: '0x... (42 chars)' },
@@ -312,6 +360,85 @@ const PlatformSettings = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Sync to Blockchain */}
+      <div className={`rounded-lg shadow-md border p-6 mt-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <h2 className={`text-xl font-semibold mb-2 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          <RiLinksLine className="text-purple-600" />
+          Sync Fee Wallet to Blockchain
+        </h2>
+        <p className={`text-sm mb-5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Pushes the configured fee wallets above to the on-chain factory contracts. Required after changing the default fee wallet.
+          The sweeper wallet must be the factory owner to update.
+        </p>
+
+        <button
+          onClick={handleSyncOnChain}
+          disabled={syncing}
+          className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow"
+        >
+          <RiRefreshLine className={syncing ? 'animate-spin' : ''} />
+          {syncing ? 'Syncing...' : 'Sync to All Chains'}
+        </button>
+
+        {syncResults && (
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <th className={`text-left py-2 pr-4 font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Chain</th>
+                  <th className={`text-left py-2 pr-4 font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Status</th>
+                  <th className={`text-left py-2 font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tx Hash</th>
+                </tr>
+              </thead>
+              <tbody>
+                {syncResults.map((r) => {
+                  const explorerBase = EXPLORER_TX_URLS[r.network];
+                  return (
+                    <tr key={r.network} className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                      <td className={`py-2.5 pr-4 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                        {r.name || r.network}
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        {r.success && (
+                          <span className="flex items-center gap-1.5 text-green-500">
+                            <RiCheckboxCircleFill /> Updated
+                          </span>
+                        )}
+                        {r.skipped && (
+                          <span className={`flex items-center gap-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            ⏭️ Already set
+                          </span>
+                        )}
+                        {!r.success && !r.skipped && (
+                          <span className="flex items-center gap-1.5 text-red-500">
+                            <RiErrorWarningLine /> {r.error || 'Failed'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5">
+                        {r.txHash ? (
+                          <a
+                            href={`${explorerBase}${r.txHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-purple-500 hover:text-purple-400 font-mono text-xs"
+                          >
+                            {r.txHash.slice(0, 10)}...{r.txHash.slice(-6)}
+                            <RiExternalLinkLine />
+                          </a>
+                        ) : (
+                          <span className={darkMode ? 'text-gray-600' : 'text-gray-400'}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Save Button */}
