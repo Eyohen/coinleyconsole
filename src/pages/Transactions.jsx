@@ -1,5 +1,5 @@
 // // src/pages/Transactions.jsx
-// import React, { useState, useEffect } from 'react';
+// import React, { useState, useEffect, useRef } from 'react';
 // import { 
 //   Search, 
 //   Filter, 
@@ -487,7 +487,7 @@
 
 
 // src/pages/Transactions.jsx - Updated for Admin
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   Filter, 
@@ -537,7 +537,7 @@ const Transactions = () => {
   const [filterOptions, setFilterOptions] = useState({
     currencies: ['USDT', 'USDC', 'DAI', 'BUSD'],
     networks: ['ethereum', 'bsc', 'tron', 'solana', 'algorand'],
-    statuses: ['pending', 'completed', 'failed']
+    statuses: ['pending', 'completed', 'failed', 'cancelled', 'expired']
   });
   
   // UI state
@@ -664,11 +664,16 @@ const Transactions = () => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'completed':
+      case 'swept':
         return 'bg-green-100 text-green-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'failed':
         return 'bg-red-100 text-red-800';
+      case 'cancelled':
+        return 'bg-orange-100 text-orange-800';
+      case 'expired':
+        return 'bg-gray-200 text-gray-600';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -706,7 +711,18 @@ const Transactions = () => {
       setError('Please log in to access transaction data.');
     }
   }, [user]);
-  
+
+  // Auto-fetch when status filter changes
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    setCurrentPage(1);
+    fetchTransactions(1);
+  }, [filters.status]);
+
   return (
     <>
       {/* Page Header */}
@@ -753,10 +769,28 @@ const Transactions = () => {
             />
             <Search className={`absolute left-3 top-2.5 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} size={18} />
           </div>
-          <button 
-            onClick={() => setShowFilters(!showFilters)} 
+          {/* Status Filter Dropdown - always visible */}
+          <select
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+            className={`px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#7042D2] ${
+              darkMode
+                ? 'bg-gray-800 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
+          >
+            <option value="">All Statuses</option>
+            {filterOptions.statuses.map(status => (
+              <option key={status} value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             className={`p-2 border rounded-md ${
-              showFilters 
+              showFilters
                 ? darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
                 : darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-500 hover:bg-gray-50'
             }`}
