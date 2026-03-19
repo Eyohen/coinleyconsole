@@ -38,7 +38,7 @@
 //     try {
 //       const response = await axios.get(`${URL}/api/payment-methods`, {
 //         headers: {
-//           Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//           Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
 //         }
 //       });
 //       setPaymentMethods(response.data);
@@ -109,7 +109,7 @@
 
 //       await axios.post(`${URL}/api/payment-methods`, paymentMethodData, {
 //         headers: {
-//           Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//           Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
 //         }
 //       });
 
@@ -145,7 +145,7 @@
 //       try {
 //         await axios.delete(`${URL}/api/payment-methods/${id}`, {
 //           headers: {
-//             Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//             Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
 //           }
 //         });
 //         fetchPaymentMethods();
@@ -473,7 +473,7 @@ const Payments = () => {
     try {
       const response = await axios.get(`${URL}/api/merchants/dashboard`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }
@@ -498,7 +498,7 @@ const Payments = () => {
     try {
       const response = await axios.get(`${URL}/api/payment-methods`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }
@@ -593,7 +593,7 @@ const Payments = () => {
     try {
       const response = await axios.put(`${URL}/api/merchants/profile`, walletFormData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }
@@ -670,7 +670,7 @@ const Payments = () => {
 
       await axios.post(`${URL}/api/payment-methods`, paymentMethodData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }
@@ -708,7 +708,7 @@ const Payments = () => {
       try {
         await axios.delete(`${URL}/api/payment-methods/${id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
             'x-api-key': user?.apiKey || '',
             'x-api-secret': user?.apiSecret || ''
           }

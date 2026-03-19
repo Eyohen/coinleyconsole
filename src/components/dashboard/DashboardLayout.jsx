@@ -73,21 +73,20 @@ const DashboardLayout = ({ children }) => {
   const currentPath = location.pathname;
   const navigate = useNavigate();
 
-  // Check authentication on mount and when auth state changes
+  // Check authentication and role on mount and when auth state changes
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = sessionStorage.getItem('access_token');
 
-    // If no token or not authenticated, redirect to login
-    if (!loading && (!token || !isAuthenticated)) {
-      console.log('Not authenticated - redirecting to login');
+    // If no token, not authenticated, or not admin role, redirect to login
+    if (!loading && (!token || !isAuthenticated || user?.role !== 'admin')) {
       navigate('/');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, user]);
 
   // Handle logout function
   const handleLogout = () => {
-    // Clear access token from localStorage
-    localStorage.removeItem("access_token");
+    // Clear access token from sessionStorage
+    sessionStorage.removeItem("access_token");
     
     // Call the logout function from AuthContext
     logout();

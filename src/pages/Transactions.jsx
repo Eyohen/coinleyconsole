@@ -96,7 +96,7 @@
       
 //       const response = await axios.get(`${URL}/api/payments/merchant/list?${params}`, {
 //         headers: {
-//           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+//           Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
 //           'x-api-key': user?.apiKey || '',
 //           'x-api-secret': user?.apiSecret || ''
 //         }
@@ -544,6 +544,7 @@ const Transactions = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [copySuccess, setCopySuccess] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [showAgentOnly, setShowAgentOnly] = useState(false);
   
   // Format date for display
   const formatDate = (dateString) => {
@@ -591,7 +592,7 @@ const Transactions = () => {
       
       const response = await axios.get(`${URL}/api/admin/transactions?${params}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -798,18 +799,32 @@ const Transactions = () => {
             <Filter size={18} />
           </button>
         </div>
-        <button 
-          onClick={handleRefresh}
-          disabled={refreshing || loading}
-          className={`flex items-center px-4 py-2 border rounded-md ${
-            darkMode 
-              ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' 
-              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <RefreshCw size={18} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAgentOnly(prev => !prev)}
+            className={`flex items-center px-3 py-2 border rounded-md text-sm transition-colors ${
+              showAgentOnly
+                ? 'bg-purple-600 border-purple-600 text-white'
+                : darkMode
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            🤖 Agent payments only
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className={`flex items-center px-4 py-2 border rounded-md ${
+              darkMode
+                ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <RefreshCw size={18} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
       
       {/* Filters Panel */}
@@ -974,7 +989,7 @@ const Transactions = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map(tx => (
+                {(showAgentOnly ? transactions.filter(tx => tx.metadata?.agentPayment === true) : transactions).map(tx => (
                   <tr key={tx.id} className={`border-b ${
                     darkMode 
                       ? 'border-gray-700 hover:bg-gray-700' 
@@ -999,6 +1014,23 @@ const Transactions = () => {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(tx.status)}`}>
                         {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
                       </span>
+                      {tx.metadata?.agentPayment && (
+                        <div className="mt-1">
+                          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${
+                            darkMode
+                              ? 'bg-purple-900/40 text-purple-300'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            🤖 Agent
+                          </span>
+                          <p
+                            className="text-xs text-gray-400 mt-0.5 font-mono truncate max-w-[140px]"
+                            title={`Owner: ${tx.metadata.agentOwner}`}
+                          >
+                            {tx.metadata.agentId}
+                          </p>
+                        </div>
+                      )}
                     </td>
                     <td className={`px-6 py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {formatDate(tx.createdAt)}

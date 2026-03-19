@@ -10,7 +10,7 @@ const axiosInstance = axios.create({
 // Request interceptor - add auth token to all requests
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = sessionStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -28,15 +28,9 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Session expired or unauthorized
-      console.log('Session expired - redirecting to login');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
 
-      // Clear auth data
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-
-      // Redirect to login page
-      // Using window.location ensures a full page reload which clears React state
       if (window.location.pathname !== '/') {
         window.location.href = '/';
       }

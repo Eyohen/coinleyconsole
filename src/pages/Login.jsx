@@ -56,7 +56,7 @@
 //       const { token, merchant } = res.data;
 
 //       if (res.status === 200) {
-//         localStorage.setItem("access_token", token)
+//         sessionStorage.setItem("access_token", token)
 //         login(merchant)
 //         setError(false)
 //         console.log(res.data)
@@ -272,10 +272,9 @@ const Login = () => {
       const { token, admin } = res.data;
 
       if (res.status === 200) {
-        localStorage.setItem("access_token", token)
-        login(admin) // Login with admin data
+        sessionStorage.setItem("access_token", token)
+        login({ ...admin, role: 'admin' }) // Login with admin data + role
         setError('')
-        console.log('Admin login successful:', res.data)
         navigate("/dashboard")
       }
 

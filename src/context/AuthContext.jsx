@@ -18,39 +18,56 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if there is stored user data AND access token
-    const storedUser = localStorage.getItem('user');
-    const accessToken = localStorage.getItem('access_token');
+    const storedUser = sessionStorage.getItem('user');
+    const accessToken = sessionStorage.getItem('access_token');
 
     if (storedUser && accessToken) {
       try {
-        setUser(JSON.parse(storedUser));
-        setIsAuthenticated(true);
+        const parsed = JSON.parse(storedUser);
+        // Verify the stored user has admin role
+        if (parsed.role === 'admin') {
+          setUser(parsed);
+          setIsAuthenticated(true);
+        } else {
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('access_token');
+        }
       } catch (error) {
-        // Handle invalid JSON in localStorage
-        console.error("Error parsing user data:", error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('access_token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('access_token');
       }
     } else {
       // Clear partial auth data if either is missing
-      localStorage.removeItem('user');
-      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('access_token');
     }
     setLoading(false);
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
+    // Only allow admin role to log in to the console
+    if (userData.role !== 'admin') {
+      throw new Error('Access denied: admin role required');
+    }
+    // Strip sensitive fields before storing
+    const safeUser = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      businessName: userData.businessName,
+    };
+    setUser(safeUser);
     setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('user', JSON.stringify(safeUser));
     setLoading(false)
   };
 
   const logout = useCallback(() => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('access_token');
     setLoading(false);
   }, []);
 
@@ -60,16 +77,11 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       (error) => {
         if (error.response && error.response.status === 401) {
-          // Session expired or unauthorized
-          console.log('Session expired - logging out');
-
-          // Clear auth data
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('user');
+          sessionStorage.removeItem('access_token');
+          sessionStorage.removeItem('user');
           setUser(null);
           setIsAuthenticated(false);
 
-          // Redirect to login page if not already there
           if (window.location.pathname !== '/') {
             window.location.href = '/';
           }
@@ -78,14 +90,12 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    // Cleanup interceptor on unmount
     return () => {
       axios.interceptors.response.eject(interceptorId);
     };
   }, []);
 
   return (
-    // <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated, loading }}>
       {children}
     </AuthContext.Provider>

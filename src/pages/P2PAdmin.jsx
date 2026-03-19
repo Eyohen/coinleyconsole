@@ -27,7 +27,7 @@ const P2PAdmin = () => {
   // NumeroBalance
   const [numeroBalance, setNumeroBalance] = useState(null);
 
-  const token = localStorage.getItem('access_token');
+  const token = sessionStorage.getItem('access_token');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {

@@ -65,7 +65,7 @@
 //     try {
 //       const response = await axios.get(`${URL}/api/admin/dashboard`, {
 //         headers: {
-//           Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//           Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
 //         }
 //       });
       
@@ -696,7 +696,7 @@ const Dashboard = () => {
       const response = await axios.get(`${URL}/api/admin/dashboard`, {
         params,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -733,7 +733,7 @@ const Dashboard = () => {
     try {
       const response = await axios.post(`${URL}/api/fees/process-all-pending`, {}, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -764,7 +764,7 @@ const Dashboard = () => {
     try {
       const response = await axios.post(`${URL}/api/fees/retry-failed`, {}, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       

@@ -72,7 +72,7 @@ const NairaMerchants = () => {
   const [disbursementAmount, setDisbursementAmount] = useState('');
   const [disbursementNarration, setDisbursementNarration] = useState('');
 
-  const token = localStorage.getItem('access_token');
+  const token = sessionStorage.getItem('access_token');
   const headers = { Authorization: `Bearer ${token}` };
 
   // Dark mode styles
