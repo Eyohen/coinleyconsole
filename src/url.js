@@ -1,1 +1,1 @@
-export const URL = import.meta.env.VITE_URL || 'https://hub.coinley.io';
+export const URL = import.meta.env.VITE_URL || 'https://talented-mercy-production.up.railway.app';
