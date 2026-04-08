@@ -93,14 +93,9 @@ const NairaMerchants = () => {
     if (activeTab === 'disbursements') {
       fetchErcasBalance();
       fetchPendingSettlements();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === 'disbursements' && merchants.length > 0) {
       fetchAllDisbursements();
     }
-  }, [merchants, activeTab]);
+  }, [activeTab]);
 
   const fetchNairaMerchants = async () => {
     try {
@@ -327,18 +322,12 @@ const NairaMerchants = () => {
   };
 
   const fetchAllDisbursements = async () => {
-    if (!merchants.length) return;
     try {
       setLoadingTransactions(true);
-      const results = await Promise.all(
-        merchants.map(m =>
-          axios.get(`${BASE_URL}/api/disbursement/history/${m.id}`, { headers })
-            .then(r => (r.data?.disbursements || []).map(d => ({ ...d, merchant: m })))
-            .catch(() => [])
-        )
-      );
-      const all = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setAllDisbursements(all);
+      const response = await axios.get(`${BASE_URL}/api/disbursement/all`, { headers });
+      if (response.data?.success) {
+        setAllDisbursements(response.data.disbursements || []);
+      }
     } catch (err) {
       console.error('Error fetching disbursements:', err);
     } finally {
@@ -764,7 +753,7 @@ const NairaMerchants = () => {
               </div>
             ) : (() => {
               const filtered = allDisbursements.filter(d =>
-                d.merchant?.businessName?.toLowerCase().includes(txSearchTerm.toLowerCase()) ||
+                d.Merchant?.businessName?.toLowerCase().includes(txSearchTerm.toLowerCase()) ||
                 d.reference?.toLowerCase().includes(txSearchTerm.toLowerCase())
               );
               return filtered.length === 0 ? (
@@ -808,8 +797,8 @@ const NairaMerchants = () => {
                               <p className="text-xs">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             </td>
                             <td className={`px-4 py-3 ${textPrimary}`}>
-                              <p className="font-medium">{d.merchant?.businessName || '—'}</p>
-                              <p className={`text-xs ${textSecondary}`}>{d.merchant?.email || ''}</p>
+                              <p className="font-medium">{d.Merchant?.businessName || '—'}</p>
+                              <p className={`text-xs ${textSecondary}`}>{d.Merchant?.email || ''}</p>
                             </td>
                             <td className={`px-4 py-3 ${textPrimary}`}>
                               <p className="font-medium">{parseFloat(d.cryptoAmount || 0).toFixed(2)}</p>
