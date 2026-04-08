@@ -71,6 +71,9 @@ const NairaMerchants = () => {
   const [disbursementMerchant, setDisbursementMerchant] = useState(null);
   const [disbursementAmount, setDisbursementAmount] = useState('');
   const [disbursementNarration, setDisbursementNarration] = useState('');
+  const [allDisbursements, setAllDisbursements] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [txSearchTerm, setTxSearchTerm] = useState('');
 
   const token = localStorage.getItem('access_token');
   const headers = { Authorization: `Bearer ${token}` };
@@ -92,6 +95,12 @@ const NairaMerchants = () => {
       fetchPendingSettlements();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'disbursements' && merchants.length > 0) {
+      fetchAllDisbursements();
+    }
+  }, [merchants, activeTab]);
 
   const fetchNairaMerchants = async () => {
     try {
@@ -314,6 +323,26 @@ const NairaMerchants = () => {
       console.error('Error fetching pending settlements:', err);
     } finally {
       setLoadingDisbursement(false);
+    }
+  };
+
+  const fetchAllDisbursements = async () => {
+    if (!merchants.length) return;
+    try {
+      setLoadingTransactions(true);
+      const results = await Promise.all(
+        merchants.map(m =>
+          axios.get(`${BASE_URL}/api/disbursement/history/${m.id}`, { headers })
+            .then(r => (r.data?.disbursements || []).map(d => ({ ...d, merchant: m })))
+            .catch(() => [])
+        )
+      );
+      const all = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setAllDisbursements(all);
+    } catch (err) {
+      console.error('Error fetching disbursements:', err);
+    } finally {
+      setLoadingTransactions(false);
     }
   };
 
@@ -635,130 +664,182 @@ const NairaMerchants = () => {
       {/* Disbursements Tab Content */}
       {activeTab === 'disbursements' && (
         <>
-          {/* Balance Card */}
-          <div className={`${cardBg} rounded-lg shadow p-6 mb-6`}>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h3 className={`text-lg font-semibold ${textPrimary}`}>ERCAS Account Balance</h3>
-                <p className={textSecondary}>Available funds for disbursement</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className={`text-right ${textPrimary}`}>
-                  <p className="text-3xl font-bold">
-                    ₦{ercasBalance !== null ? Number(ercasBalance).toLocaleString() : '---'}
-                  </p>
-                  <p className={`text-sm ${textSecondary}`}>NGN</p>
-                </div>
+          {/* Top row: ERCAS Balance + Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* ERCAS Balance */}
+            <div className={`${cardBg} rounded-xl shadow p-5 flex flex-col justify-between`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={`text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>ERCAS Balance</p>
                 <button
                   onClick={fetchErcasBalance}
-                  className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  className={`p-1.5 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  title="Refresh balance"
                 >
-                  <RiRefreshLine className={textSecondary} />
+                  <RiRefreshLine className={`text-sm ${textSecondary}`} />
                 </button>
               </div>
+              <p className={`text-2xl font-bold ${textPrimary}`}>
+                ₦{ercasBalance !== null ? Number(ercasBalance).toLocaleString() : '---'}
+              </p>
+              <p className={`text-xs mt-1 ${textSecondary}`}>Available for disbursement</p>
+            </div>
+
+            {/* Total Transactions */}
+            <div className={`${cardBg} rounded-xl shadow p-5 flex flex-col justify-between`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={`text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Total Transactions</p>
+                <div className={`p-1.5 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <RiExchangeDollarLine className={`text-sm ${textSecondary}`} />
+                </div>
+              </div>
+              <p className={`text-2xl font-bold ${textPrimary}`}>{allDisbursements.length}</p>
+              <p className={`text-xs mt-1 ${textSecondary}`}>All time disbursements</p>
+            </div>
+
+            {/* Total NGN Disbursed */}
+            <div className={`${cardBg} rounded-xl shadow p-5 flex flex-col justify-between`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={`text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Total Disbursed</p>
+                <div className={`p-1.5 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <RiMoneyDollarCircleLine className={`text-sm ${textSecondary}`} />
+                </div>
+              </div>
+              <p className={`text-2xl font-bold ${textPrimary}`}>
+                ₦{allDisbursements.reduce((sum, d) => sum + (parseFloat(d.ngnAmount) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className={`text-xs mt-1 ${textSecondary}`}>Total NGN sent to merchants</p>
+            </div>
+
+            {/* Total Fees Earned */}
+            <div className={`rounded-xl shadow p-5 flex flex-col justify-between ${darkMode ? 'bg-[#4a2fa0]' : 'bg-[#7042D2]'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-200">Fees Earned</p>
+                <div className="p-1.5 rounded-lg bg-white/10">
+                  <RiBankLine className="text-sm text-white" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                ₦{allDisbursements.reduce((sum, d) => sum + (parseFloat(d.feeAmount) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs mt-1 text-purple-200">Coinley transaction fees</p>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className={`${cardBg} rounded-lg shadow p-4 mb-6`}>
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <h3 className={`font-medium ${textPrimary}`}>Quick Disbursement</h3>
-              <div className="flex gap-3">
+          {/* Transaction History Table */}
+          <div className={`${cardBg} rounded-xl shadow overflow-hidden`}>
+            {/* Table Header */}
+            <div className={`px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
+              <div>
+                <h3 className={`font-semibold ${textPrimary}`}>Transaction History</h3>
+                <p className={`text-sm ${textSecondary}`}>All naira disbursements across merchants</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {/* Search */}
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                  <RiSearchLine className={`text-sm ${textSecondary}`} />
+                  <input
+                    type="text"
+                    placeholder="Search merchant or ref..."
+                    value={txSearchTerm}
+                    onChange={e => setTxSearchTerm(e.target.value)}
+                    className={`text-sm bg-transparent outline-none w-44 ${textPrimary} placeholder:${textSecondary}`}
+                  />
+                </div>
+                {/* Refresh */}
                 <button
-                  onClick={() => {
-                    fetchErcasBalance();
-                    fetchPendingSettlements();
-                  }}
-                  disabled={loadingDisbursement}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} ${textPrimary}`}
+                  onClick={() => { fetchErcasBalance(); fetchAllDisbursements(); }}
+                  disabled={loadingTransactions}
+                  className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  title="Refresh transactions"
                 >
-                  <RiRefreshLine className={loadingDisbursement ? 'animate-spin' : ''} />
-                  Refresh
+                  <RiRefreshLine className={`${textSecondary} ${loadingTransactions ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Naira Merchants for Disbursement */}
-          <div className={`${cardBg} rounded-lg shadow overflow-hidden`}>
-            <div className={`px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h3 className={`font-medium ${textPrimary}`}>Naira Merchants</h3>
-              <p className={`text-sm ${textSecondary}`}>Select a merchant to initiate disbursement</p>
-            </div>
-
-            {loadingDisbursement && merchants.length === 0 ? (
-              <div className="flex justify-center py-12">
+            {/* Table Body */}
+            {loadingTransactions ? (
+              <div className="flex justify-center items-center py-16">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7042D2]"></div>
               </div>
-            ) : merchants.length === 0 ? (
-              <div className={`text-center py-12 ${textSecondary}`}>
-                <RiMoneyDollarCircleLine className="mx-auto text-4xl mb-3 opacity-50" />
-                <p>No naira merchants found</p>
-                <p className="text-sm mt-1">Add naira merchants from the Merchants tab first</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className={tableHeaderBg}>
-                    <tr>
-                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Business</th>
-                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Bank Account</th>
-                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Status</th>
-                      <th className={`px-4 py-3 text-left text-xs font-medium ${textSecondary} uppercase`}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className={`divide-y ${tableBorder}`}>
-                    {merchants.map((merchant) => {
-                      const bankAccount = merchant.BankAccounts?.[0] || merchant.bankAccount;
-                      return (
-                        <tr key={merchant.id} className={tableRowHover}>
-                          <td className={`px-4 py-3 ${textPrimary}`}>
-                            <div>
-                              <p className="font-medium">{merchant.businessName}</p>
-                              <p className={`text-sm ${textSecondary}`}>{merchant.email}</p>
-                            </div>
-                          </td>
-                          <td className={`px-4 py-3 ${textSecondary}`}>
-                            {bankAccount ? (
-                              <div>
-                                <p className={textPrimary}>{bankAccount.bankName}</p>
-                                <p className="text-sm">{bankAccount.accountNumber?.substring(0, 4)}******</p>
-                                <p className="text-sm">{bankAccount.accountName}</p>
-                              </div>
-                            ) : (
-                              <span className="text-yellow-500">Not configured</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              bankAccount
-                                ? 'bg-green-100 text-green-800'
-                                : darkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {bankAccount ? 'Ready' : 'Pending Bank'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => openDisbursementModal(merchant)}
-                              disabled={!bankAccount}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                                bankAccount
-                                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              }`}
-                            >
-                              <RiSendPlaneLine />
-                              Disburse
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            ) : (() => {
+              const filtered = allDisbursements.filter(d =>
+                d.merchant?.businessName?.toLowerCase().includes(txSearchTerm.toLowerCase()) ||
+                d.reference?.toLowerCase().includes(txSearchTerm.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <div className={`text-center py-16 ${textSecondary}`}>
+                  <RiMoneyDollarCircleLine className="mx-auto text-5xl mb-3 opacity-30" />
+                  <p className="font-medium">No transactions found</p>
+                  <p className="text-sm mt-1">
+                    {txSearchTerm ? 'Try a different search term' : 'Disbursements will appear here once processed'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className={tableHeaderBg}>
+                      <tr>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Date</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Merchant</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Crypto Paid</th>
+                        <th className={`px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>NGN Amount</th>
+                        <th className={`px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Fee (₦)</th>
+                        <th className={`px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Net to Merchant</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Status</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Reference</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${tableBorder}`}>
+                      {filtered.map((d) => {
+                        const statusStyles = {
+                          success:    darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700',
+                          pending:    darkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-700',
+                          processing: darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700',
+                          failed:     darkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700',
+                          reversed:   darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500',
+                        };
+                        const badge = statusStyles[d.status] || statusStyles.pending;
+                        const date = new Date(d.createdAt);
+                        return (
+                          <tr key={d.id} className={tableRowHover}>
+                            <td className={`px-4 py-3 whitespace-nowrap ${textSecondary}`}>
+                              <p className={textPrimary}>{date.toLocaleDateString()}</p>
+                              <p className="text-xs">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                            </td>
+                            <td className={`px-4 py-3 ${textPrimary}`}>
+                              <p className="font-medium">{d.merchant?.businessName || '—'}</p>
+                              <p className={`text-xs ${textSecondary}`}>{d.merchant?.email || ''}</p>
+                            </td>
+                            <td className={`px-4 py-3 ${textPrimary}`}>
+                              <p className="font-medium">{parseFloat(d.cryptoAmount || 0).toFixed(2)}</p>
+                              <p className={`text-xs ${textSecondary}`}>{d.cryptoCurrency || 'USDT'}</p>
+                            </td>
+                            <td className={`px-4 py-3 text-right font-medium ${textPrimary}`}>
+                              ₦{Number(d.ngnAmount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-[#7042D2]">
+                              ₦{Number(d.feeAmount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </td>
+                            <td className={`px-4 py-3 text-right font-semibold ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
+                              ₦{Number(d.netAmount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${badge}`}>
+                                {d.status || 'pending'}
+                              </span>
+                            </td>
+                            <td className={`px-4 py-3 font-mono text-xs ${textSecondary}`}>
+                              {d.reference || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </>
       )}
