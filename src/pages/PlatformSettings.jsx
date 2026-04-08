@@ -66,7 +66,7 @@ const PlatformSettings = () => {
         {},
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           },
         }
       );
@@ -110,7 +110,7 @@ const PlatformSettings = () => {
     try {
       const response = await axios.get(`${URL}/api/admin/settings/platform`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
 
@@ -178,7 +178,7 @@ const PlatformSettings = () => {
         updates,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
             'Content-Type': 'application/json'
           }
         }

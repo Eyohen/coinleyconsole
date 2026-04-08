@@ -182,7 +182,7 @@ const Settings = () => {
     try {
       const response = await axios.put(`${URL}/api/admin/profile`, businessForm, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
 
@@ -232,7 +232,7 @@ const Settings = () => {
         status: apiForm.testMode ? 'test' : 'active'
       }, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
 
@@ -325,7 +325,7 @@ const Settings = () => {
     try {
       const response = await axios.get(`${URL}/api/admin/settings/platform`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
 
@@ -393,7 +393,7 @@ const Settings = () => {
         updates,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
             'Content-Type': 'application/json'
           }
         }

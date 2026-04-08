@@ -106,7 +106,7 @@ const SweepManagement = () => {
       });
 
       const response = await axios.get(`${URL}/api/admin/sweep/failed?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
 
       if (response.data?.success) {
@@ -148,7 +148,7 @@ const SweepManagement = () => {
 
     try {
       const response = await axios.get(`${URL}/api/admin/sweep/balances`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
 
       if (response.data?.success) {
@@ -181,7 +181,7 @@ const SweepManagement = () => {
 
     try {
       const response = await axios.post(`${URL}/api/admin/sweep/${paymentId}/retry`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
 
       if (response.data?.success) {
@@ -207,7 +207,7 @@ const SweepManagement = () => {
     try {
       const response = await axios.post(`${URL}/api/admin/sweep/bulk-retry`,
         { paymentIds: selectedSweeps },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` } }
+        { headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } }
       );
 
       if (response.data?.success) {

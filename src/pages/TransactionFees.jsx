@@ -277,7 +277,7 @@ const TransactionFees = () => {
       
       const response = await axios.get(`${URL}/api/admin/fee-transactions?${params}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -322,7 +322,7 @@ const TransactionFees = () => {
     try {
       const response = await axios.post(`${URL}/api/fees/process-all-pending`, {}, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -353,7 +353,7 @@ const TransactionFees = () => {
     try {
       const response = await axios.post(`${URL}/api/fees/retry-failed`, {}, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -387,7 +387,7 @@ const TransactionFees = () => {
         transactionHash: feeTransaction.Payment?.transactionHash
       }, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -413,7 +413,7 @@ const TransactionFees = () => {
     try {
       const response = await axios.get(`${URL}/api/admin/wallets`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       

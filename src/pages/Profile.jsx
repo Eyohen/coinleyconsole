@@ -55,7 +55,7 @@ const Profile = () => {
       // Get merchant data from the dashboard endpoint which provides full profile details
       const response = await axios.get(`${URL}/api/merchants/dashboard`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }
@@ -167,7 +167,7 @@ const Profile = () => {
     try {
       const response = await axios.put(`${URL}/api/merchants/profile`, updateData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }
@@ -226,7 +226,7 @@ const Profile = () => {
         newPassword: passwordData.newPassword
       }, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
           'x-api-key': user?.apiKey || '',
           'x-api-secret': user?.apiSecret || ''
         }

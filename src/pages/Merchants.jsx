@@ -189,7 +189,7 @@
       
 //       const response = await axios.get(`${URL}/api/admin/merchants?${params}`, {
 //         headers: {
-//           Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//           Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
 //         }
 //       });
       
@@ -261,7 +261,7 @@
 //         { status: newStatus },
 //         {
 //           headers: {
-//             Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//             Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
 //           }
 //         }
 //       );
@@ -981,7 +981,7 @@ const Merchants = () => {
       
       const response = await axios.get(`${URL}/api/admin/merchants?${params}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
         }
       });
       
@@ -1053,7 +1053,7 @@ const Merchants = () => {
         { status: newStatus },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`
+            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
           }
         }
       );
@@ -1081,7 +1081,7 @@ const Merchants = () => {
         { feePercentage },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`
+            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`
           }
         }
       );

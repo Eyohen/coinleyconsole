@@ -30,7 +30,7 @@ const SweepGasAnalytics = () => {
       });
 
       const response = await axios.get(`${URL}/api/admin/sweep/gas-analytics?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
 
       if (response.data?.success) {
@@ -120,7 +120,7 @@ const SweepGasAnalytics = () => {
     // Refetch without filters
     setLoading(true);
     axios.get(`${URL}/api/admin/sweep/gas-analytics`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
     })
     .then(response => {
       if (response.data?.success) {
