@@ -1,99 +1,58 @@
 // src/components/SweeperBalances.jsx
-import React, { useState, useEffect } from 'react';
+//
+// Renders sweeper-wallet balances for every CREATE2 sweep chain. All numbers
+// (severity, USD value, sweeps remaining) come from the server's
+// /api/admin/sweep/balances endpoint, which delegates to SweeperHealthService
+// so the dashboard and the gasMonitor cron agree on chain state.
+//
+// Previously this component hit CoinGecko free-tier from the browser with a
+// hardcoded ID map. That was rate-limited, leaked the call origin, and
+// silently dropped Monad (no listing). Server-side resolution removes all of
+// those concerns.
+
+import React, { useState } from 'react';
 import { RefreshCw, Copy, AlertCircle, DollarSign } from 'lucide-react';
 import { useDarkMode } from '../context/DarkModeContext';
-import axios from 'axios';
+
+const SEVERITY_DISPLAY = {
+  healthy:  { label: 'OK',       light: 'bg-green-100 text-green-800',     dark: 'bg-green-900/40 text-green-300'   },
+  warning:  { label: 'Low',      light: 'bg-yellow-100 text-yellow-800',   dark: 'bg-yellow-900/40 text-yellow-300' },
+  critical: { label: 'Critical', light: 'bg-red-100 text-red-800',         dark: 'bg-red-900/40 text-red-300'       },
+  empty:    { label: 'Empty',    light: 'bg-red-200 text-red-900',         dark: 'bg-red-900/60 text-red-200'       },
+  unknown:  { label: 'RPC',      light: 'bg-gray-200 text-gray-800',       dark: 'bg-gray-700 text-gray-200'        },
+};
+
+const formatNative = (value, decimals = 6) => {
+  if (value == null) return '—';
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return '—';
+  return n.toFixed(decimals);
+};
+
+const formatUsd = (value) => {
+  if (value == null || !Number.isFinite(value)) return null;
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const SweeperBalances = ({ balances = [], loading = false, onRefresh }) => {
   const { darkMode } = useDarkMode();
   const [copySuccess, setCopySuccess] = useState('');
-  const [prices, setPrices] = useState({});
-  const [pricesLoading, setPricesLoading] = useState(false);
-
-  const getStatusColor = (balance) => {
-    const bal = parseFloat(balance);
-    if (bal >= 0.001) return 'green';
-    if (bal > 0) return 'yellow';
-    return 'red';
-  };
-
-  const getStatusLabel = (balance) => {
-    const bal = parseFloat(balance);
-    if (bal >= 0.001) return 'OK';
-    if (bal > 0) return 'Low';
-    return 'Empty';
-  };
 
   const copyToClipboard = (address) => {
+    if (!address) return;
     navigator.clipboard.writeText(address)
       .then(() => {
         setCopySuccess(address);
         setTimeout(() => setCopySuccess(''), 2000);
       })
-      .catch(err => {
-        console.error('Failed to copy text: ', err);
-      });
+      .catch(err => console.error('Failed to copy address:', err));
   };
 
-  // Map token symbols to CoinGecko IDs
-  const getCoinGeckoId = (symbol) => {
-    const mapping = {
-      'ETH': 'ethereum',
-      'BNB': 'binancecoin',
-      'MATIC': 'polygon-ecosystem-token', // POL (ex-MATIC) - updated token name
-      'AVAX': 'avalanche-2',
-      'MONAD': 'monad' // Add when available on CoinGecko
-    };
-    return mapping[symbol] || symbol.toLowerCase();
-  };
-
-  // Fetch crypto prices from CoinGecko
-  const fetchPrices = async () => {
-    if (balances.length === 0) return;
-
-    setPricesLoading(true);
-    try {
-      // Get unique coin IDs
-      const coinIds = [...new Set(balances.map(bal => getCoinGeckoId(bal.symbol)))].join(',');
-
-      console.log('Fetching prices for:', coinIds);
-
-      const response = await axios.get(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd`
-      );
-
-      console.log('CoinGecko response:', response.data);
-      setPrices(response.data);
-    } catch (err) {
-      console.error('Error fetching prices:', err);
-      console.error('Error details:', err.response?.data);
-    } finally {
-      setPricesLoading(false);
-    }
-  };
-
-  // Fetch prices when balances change
-  useEffect(() => {
-    if (balances.length > 0) {
-      fetchPrices();
-    }
-  }, [balances]);
-
-  // Calculate USD value
-  const getUsdValue = (balance, symbol) => {
-    const coinId = getCoinGeckoId(symbol);
-    const price = prices[coinId]?.usd;
-    if (!price) return null;
-    return parseFloat(balance) * price;
-  };
-
-  // Calculate total USD value
-  const getTotalUsdValue = () => {
-    return balances.reduce((total, bal) => {
-      const usdValue = getUsdValue(bal.balance, bal.symbol);
-      return total + (usdValue || 0);
-    }, 0);
-  };
+  const totalUsd = balances.reduce((total, b) => {
+    return typeof b.usdValue === 'number' && Number.isFinite(b.usdValue)
+      ? total + b.usdValue
+      : total;
+  }, 0);
 
   return (
     <>
@@ -107,22 +66,14 @@ const SweeperBalances = ({ balances = [], loading = false, onRefresh }) => {
               <div className={`flex items-center gap-2 mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <DollarSign size={16} />
                 <span className="text-sm">
-                  Total: {pricesLoading ? (
-                    <span className="animate-pulse">Loading...</span>
-                  ) : (
-                    <span className="font-semibold">
-                      ${getTotalUsdValue().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                    </span>
-                  )}
+                  Total: <span className="font-semibold">${formatUsd(totalUsd) || '—'} USD</span>
+                  <span className="opacity-60"> · {balances.length} chains</span>
                 </span>
               </div>
             )}
           </div>
           <button
-            onClick={() => {
-              onRefresh();
-              fetchPrices();
-            }}
+            onClick={onRefresh}
             disabled={loading}
             className={`p-2 rounded-md ${
               darkMode
@@ -147,62 +98,87 @@ const SweeperBalances = ({ balances = [], loading = false, onRefresh }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {balances.map((bal) => {
-              const status = getStatusColor(bal.balance);
-              const statusLabel = getStatusLabel(bal.balance);
-              const usdValue = getUsdValue(bal.balance, bal.symbol);
+              const sev = bal.severity || 'unknown';
+              const display = SEVERITY_DISPLAY[sev] || SEVERITY_DISPLAY.unknown;
+              const badgeClass = darkMode ? display.dark : display.light;
+              const address = bal.walletAddress || bal.address || null;
+              const usdValue = typeof bal.usdValue === 'number' && Number.isFinite(bal.usdValue) ? bal.usdValue : null;
+              const sweepsRemaining = bal.estimatedSweepsRemaining;
 
               return (
                 <div
-                  key={bal.network}
+                  key={bal.chainId}
                   className={`p-4 border rounded-lg ${
                     darkMode ? 'border-gray-700' : 'border-gray-200'
                   }`}
                 >
-                  {/* Network name and status */}
+                  {/* Network name + severity badge */}
                   <div className="flex items-center justify-between mb-2">
                     <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      {bal.network}
+                      {bal.network || bal.name}
                     </span>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        status === 'green'
-                          ? 'bg-green-100 text-green-800'
-                          : status === 'yellow'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                      }`}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${badgeClass}`}
+                      title={bal.error || `severity: ${sev}`}
                     >
-                      {statusLabel}
+                      {display.label}
                     </span>
                   </div>
 
                   {/* Balance */}
                   <div className={`text-2xl font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    {parseFloat(bal.balance).toFixed(6)} {bal.symbol}
+                    {formatNative(bal.balance)} {bal.symbol}
                   </div>
 
-                  {/* USD Value */}
-                  {usdValue !== null && (
-                    <div className={`text-sm mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      ≈ ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                  {/* USD value */}
+                  {usdValue !== null ? (
+                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      ≈ ${formatUsd(usdValue)} USD
+                    </div>
+                  ) : (
+                    <div className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      USD: —
                     </div>
                   )}
 
-                  {/* Wallet address with copy button */}
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-mono ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {bal.walletAddress.substring(0, 6)}...{bal.walletAddress.substring(38)}
-                    </span>
-                    <button
-                      onClick={() => copyToClipboard(bal.walletAddress)}
-                      className={`${
-                        darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                      title="Copy wallet address"
-                    >
-                      <Copy size={14} />
-                    </button>
+                  {/* Sweeps remaining estimate */}
+                  <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    {sweepsRemaining != null
+                      ? `≈ ${sweepsRemaining} sweep${sweepsRemaining === 1 ? '' : 's'} remaining`
+                      : 'Sweeps remaining: —'}
+                    {bal.avgGasSource === 'fallback' && sweepsRemaining != null && (
+                      <span className="opacity-60" title="No historical sweep data on this chain yet — using estimate from configured threshold.">
+                        {' '}(estimate)
+                      </span>
+                    )}
                   </div>
+
+                  {/* Wallet address */}
+                  {address ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`text-xs font-mono ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {address.substring(0, 6)}…{address.substring(address.length - 4)}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(address)}
+                        className={darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-600'}
+                        title="Copy wallet address"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      Address unavailable
+                    </div>
+                  )}
+
+                  {/* RPC error surfacing — only render when present */}
+                  {bal.error && (
+                    <div className={`text-xs mt-2 px-2 py-1 rounded ${darkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
+                      {bal.error}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -210,7 +186,6 @@ const SweeperBalances = ({ balances = [], loading = false, onRefresh }) => {
         )}
       </div>
 
-      {/* Copy success toast */}
       {copySuccess && (
         <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50">
           Copied to clipboard!

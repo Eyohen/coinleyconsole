@@ -607,7 +607,8 @@ import axios from 'axios';
 import { URL } from '../url';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
-import { 
+import LowGasBanner from '../components/LowGasBanner';
+import {
   BarChart,
   Bar,
   LineChart,
@@ -885,7 +886,12 @@ const Dashboard = () => {
           Welcome back {user?.name}!
         </p>
       </div>
-      
+
+      {/* Low-gas warning banner (only renders when any sweep chain is below threshold) */}
+      <div className="px-6">
+        <LowGasBanner />
+      </div>
+
       {/* Error and Success Messages */}
       {error && (
         <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-8 flex items-center justify-between">

@@ -8,6 +8,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 import SweeperBalances from '../components/SweeperBalances';
 import FailedSweepsTable from '../components/FailedSweepsTable';
 import SweepGasAnalytics from '../components/SweepGasAnalytics';
+import LowGasBanner from '../components/LowGasBanner';
 
 // Bulk Retry Confirmation Modal
 const BulkRetryModal = ({ isOpen, onClose, onConfirm, selectedCount, retrying }) => {
@@ -152,17 +153,18 @@ const SweepManagement = () => {
       });
 
       if (response.data?.success) {
-        // Backend sends balances directly, not nested in data
+        // Backend now returns the full health object. Preserve every field —
+        // SweeperBalances component reads severity, usdValue, sweepsRemaining
+        // directly from the server, and LowGasBanner reads severity too.
         const rawBalances = response.data.balances || [];
-
-        // Transform to match component expectations
         const transformedBalances = rawBalances.map(bal => ({
+          ...bal,
+          // Keep these legacy field aliases so older component code paths
+          // (and the renderer that reads `bal.network` / `bal.walletAddress`)
+          // keep working.
           network: bal.name,
-          balance: bal.balance,
-          walletAddress: bal.address || 'Not configured',
-          symbol: bal.symbol
+          walletAddress: bal.address || null
         }));
-
         setBalances(transformedBalances);
       }
     } catch (err) {
@@ -308,6 +310,9 @@ const SweepManagement = () => {
           </button>
         </div>
       )}
+
+      {/* Low-gas warning banner (only renders when any chain is below threshold) */}
+      <LowGasBanner />
 
       {/* Sweeper Balances Component */}
       <SweeperBalances
