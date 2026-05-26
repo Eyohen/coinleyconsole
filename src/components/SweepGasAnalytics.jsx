@@ -1,5 +1,5 @@
 // src/components/SweepGasAnalytics.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, Calendar, Fuel, RefreshCw, AlertCircle } from 'lucide-react';
 import { useDarkMode } from '../context/DarkModeContext';
 import axios from 'axios';
@@ -8,25 +8,21 @@ import { URL } from '../url';
 const SweepGasAnalytics = () => {
   const { darkMode } = useDarkMode();
 
-  // State
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [prices, setPrices] = useState({});
 
-  // Date filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Fetch gas analytics
-  const fetchGasAnalytics = async () => {
+  const fetchGasAnalytics = async ({ start, end } = { start: startDate, end: endDate }) => {
     setLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams({
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate })
+        ...(start && { startDate: start }),
+        ...(end && { endDate: end })
       });
 
       const response = await axios.get(`${URL}/api/admin/sweep/gas-analytics?${params}`, {
@@ -44,95 +40,21 @@ const SweepGasAnalytics = () => {
     }
   };
 
-  // Fetch crypto prices for USD conversion
-  const fetchPrices = async () => {
-    try {
-      const response = await axios.get(
-        'https://api.coingecko.com/api/v3/simple/price?ids=ethereum,binancecoin,polygon-ecosystem-token,avalanche-2,monad&vs_currencies=usd'
-      );
-
-      setPrices({
-        'ETH': response.data.ethereum?.usd || 0,
-        'BNB': response.data.binancecoin?.usd || 0,
-        'MATIC': response.data['polygon-ecosystem-token']?.usd || 0,
-        'AVAX': response.data['avalanche-2']?.usd || 0,
-        'MON': response.data.monad?.usd || 0
-      });
-    } catch (err) {
-      console.error('Error fetching prices:', err);
-    }
-  };
-
-  // Get USD value for gas
-  const getUsdValue = (nativeAmount, network) => {
-    // Map network names to symbols (handle variations)
-    const symbolMap = {
-      'Optimism': 'ETH',
-      'Base': 'ETH',
-      'Arbitrum': 'ETH',
-      'Arbitrum One': 'ETH',
-      'BSC': 'BNB',
-      'Binance Smart Chain': 'BNB',
-      'Polygon': 'MATIC',
-      'Avalanche': 'AVAX',
-      'Avalanche C-Chain': 'AVAX',
-      'Monad': 'MON' // Monad uses MON for gas
-    };
-
-    const symbol = symbolMap[network];
-    const price = prices[symbol];
-
-    if (!price) return null;
-    return parseFloat(nativeAmount) * price;
-  };
-
-  // Calculate total USD value
-  const getTotalUsdValue = () => {
-    if (!analytics?.networks) return 0;
-
-    return analytics.networks.reduce((total, network) => {
-      const usdValue = getUsdValue(network.totalGasNative, network.network);
-      return total + (usdValue || 0);
-    }, 0);
-  };
-
-  // Load data on mount
   useEffect(() => {
     fetchGasAnalytics();
-    fetchPrices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handle refresh
-  const handleRefresh = () => {
-    fetchGasAnalytics();
-    fetchPrices();
-  };
-
-  // Handle filter apply
-  const handleApplyFilters = () => {
-    fetchGasAnalytics();
-  };
-
-  // Handle filter reset
+  const handleRefresh = () => fetchGasAnalytics();
+  const handleApplyFilters = () => fetchGasAnalytics();
   const handleResetFilters = () => {
     setStartDate('');
     setEndDate('');
-    // Refetch without filters
-    setLoading(true);
-    axios.get(`${URL}/api/admin/sweep/gas-analytics`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
-    })
-    .then(response => {
-      if (response.data?.success) {
-        setAnalytics(response.data.data);
-      }
-    })
-    .catch(err => {
-      console.error('Error:', err);
-      setError('Failed to load analytics');
-    })
-    .finally(() => setLoading(false));
+    fetchGasAnalytics({ start: '', end: '' });
   };
+
+  const totalGasUsd = analytics?.summary?.totalGasUsd ?? 0;
+  const hasUsdGap = analytics?.summary?.hasUsdGap;
 
   return (
     <div className={`rounded-lg shadow-sm p-6 mb-8 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
@@ -227,6 +149,14 @@ const SweepGasAnalytics = () => {
         </div>
       ) : analytics ? (
         <>
+          {/* USD-gap warning */}
+          {hasUsdGap && (
+            <div className="mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-4 py-2 flex items-center gap-2">
+              <AlertCircle size={16} />
+              <span>One or more chains couldn&apos;t be priced — totals exclude those rows.</span>
+            </div>
+          )}
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -237,7 +167,7 @@ const SweepGasAnalytics = () => {
                 <TrendingUp size={18} className="text-[#7042D2]" />
               </div>
               <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                ${getTotalUsdValue().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${totalGasUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
 
@@ -281,42 +211,34 @@ const SweepGasAnalytics = () => {
                 </tr>
               </thead>
               <tbody>
-                {analytics.networks?.map((network) => {
-                  const usdValue = getUsdValue(network.totalGasNative, network.network);
-
-                  return (
-                    <tr
-                      key={network.chainId}
-                      className={`border-b ${
-                        darkMode
-                          ? 'border-gray-700 hover:bg-gray-700'
-                          : 'border-gray-100 hover:bg-gray-50'
-                      }`}
-                    >
-                      <td className={`px-6 py-4 font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                        {network.network}
-                      </td>
-                      <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {parseFloat(network.totalGasNative).toFixed(6)} {
-                          network.network === 'Binance Smart Chain' || network.network === 'BSC' ? 'BNB' :
-                          network.network === 'Polygon' ? 'MATIC' :
-                          network.network === 'Avalanche' || network.network === 'Avalanche C-Chain' ? 'AVAX' :
-                          network.network === 'Monad' ? 'MON' :
-                          'ETH'
-                        }
-                      </td>
-                      <td className={`px-6 py-4 font-medium text-green-600`}>
-                        {usdValue ? `$${usdValue.toFixed(2)}` : '-'}
-                      </td>
-                      <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {network.totalPayments}
-                      </td>
-                      <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {parseFloat(network.avgGasPerPayment).toFixed(6)}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {analytics.networks?.map((network) => (
+                  <tr
+                    key={network.chainId}
+                    className={`border-b ${
+                      darkMode
+                        ? 'border-gray-700 hover:bg-gray-700'
+                        : 'border-gray-100 hover:bg-gray-50'
+                    }`}
+                  >
+                    <td className={`px-6 py-4 font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      {network.network}
+                    </td>
+                    <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {parseFloat(network.totalGasNative).toFixed(6)} {network.nativeSymbol || ''}
+                    </td>
+                    <td className={`px-6 py-4 font-medium text-green-600`}>
+                      {network.totalGasUsd != null
+                        ? `$${network.totalGasUsd.toFixed(2)}`
+                        : '-'}
+                    </td>
+                    <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {network.totalPayments}
+                    </td>
+                    <td className={`px-6 py-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {parseFloat(network.avgGasPerPayment).toFixed(6)} {network.nativeSymbol || ''}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
