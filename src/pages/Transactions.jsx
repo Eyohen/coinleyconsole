@@ -535,11 +535,15 @@ const Transactions = () => {
     sortOrder: 'DESC'
   });
   
-  // Filter options
+  // Filter options — populated from /api/admin/transactions/filter-options
+  // on mount so the dropdowns reflect what's actually in the DB and what
+  // networks we currently support, not a hardcoded list that has rotted.
+  // `networks` items are { id, name, shortName, chainId }; the dropdown
+  // sends `name` as the filter value (the backend filters by Network.name).
   const [filterOptions, setFilterOptions] = useState({
-    currencies: ['USDT', 'USDC', 'DAI', 'BUSD'],
-    networks: ['ethereum', 'bsc', 'tron', 'solana', 'algorand'],
-    statuses: ['pending', 'completed', 'failed', 'cancelled', 'expired']
+    currencies: [],
+    networks: [],
+    statuses: []
   });
   
   // UI state
@@ -705,6 +709,22 @@ const Transactions = () => {
     return `${hash.substring(0, 8)}...${hash.substring(hash.length - 6)}`;
   };
   
+  // Load filter options once on mount (independent of user since it's a small
+  // metadata fetch — but still gated on the auth token below).
+  useEffect(() => {
+    const token = sessionStorage.getItem('access_token');
+    if (!token) return;
+    axios.get(`${URL}/api/admin/transactions/filter-options`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => {
+        if (response.data?.success) {
+          setFilterOptions(response.data.data);
+        }
+      })
+      .catch(err => console.error('Error fetching filter options:', err));
+  }, []);
+
   // Load data on mount
   useEffect(() => {
     if (user) {
@@ -894,8 +914,8 @@ const Transactions = () => {
             >
               <option value="">All Networks</option>
               {filterOptions.networks.map(network => (
-                <option key={network} value={network}>
-                  {network.charAt(0).toUpperCase() + network.slice(1)}
+                <option key={network.id || network.name} value={network.name}>
+                  {network.name}
                 </option>
               ))}
             </select>
