@@ -488,11 +488,12 @@
 
 // src/pages/Transactions.jsx - Updated for Admin
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Eye, 
-  Copy, 
+import { useNavigate } from 'react-router-dom';
+import {
+  Search,
+  Filter,
+  Eye,
+  Copy,
   RefreshCw,
   Calendar,
   ChevronDown,
@@ -509,6 +510,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 const Transactions = () => {
   const { user } = useAuth();
   const { darkMode } = useDarkMode();
+  const navigate = useNavigate();
   
   // State for transactions data
   const [transactions, setTransactions] = useState([]);
@@ -760,7 +762,7 @@ const Transactions = () => {
               name="search"
               value={filters.search}
               onChange={handleFilterChange}
-              placeholder="Search by ID or Tx Hash..."
+              placeholder="Search by ID, deposit address, tx hash, sweep tx, or salt..."
               className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#7042D2] ${
                 darkMode 
                   ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
@@ -990,11 +992,15 @@ const Transactions = () => {
               </thead>
               <tbody>
                 {(showAgentOnly ? transactions.filter(tx => tx.metadata?.agentPayment === true) : transactions).map(tx => (
-                  <tr key={tx.id} className={`border-b ${
-                    darkMode 
-                      ? 'border-gray-700 hover:bg-gray-700' 
-                      : 'border-gray-100 hover:bg-gray-50'
-                  }`}>
+                  <tr
+                    key={tx.id}
+                    onClick={() => navigate(`/transactions/${tx.id}`)}
+                    className={`border-b cursor-pointer ${
+                      darkMode
+                        ? 'border-gray-700 hover:bg-gray-700'
+                        : 'border-gray-100 hover:bg-gray-50'
+                    }`}
+                  >
                     <td className={`px-6 py-4 font-mono text-xs ${darkMode ? 'text-gray-300' : 'text-gray-800'}`}>
                       {tx.id.substring(0, 8)}...
                     </td>
@@ -1043,7 +1049,7 @@ const Transactions = () => {
                         {tx.transactionHash && (
                           <>
                             <button
-                              onClick={() => copyToClipboard(tx.transactionHash)}
+                              onClick={(e) => { e.stopPropagation(); copyToClipboard(tx.transactionHash); }}
                               className={`${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}
                               title="Copy transaction hash"
                             >
@@ -1053,6 +1059,7 @@ const Transactions = () => {
                               href={getExplorerUrl(tx.transactionHash, tx.Network)}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="text-[#7042D2] hover:text-purple-700"
                               title="View on blockchain explorer"
                             >

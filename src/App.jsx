@@ -21,6 +21,7 @@ import ResetPassword from './pages/ResetPassword';
 import Merchants from './pages/Merchants';
 import TransactionFees from './pages/TransactionFees';
 import Transactions from './pages/Transactions';
+import TransactionDetail from './pages/TransactionDetail';
 import PlatformSettings from './pages/PlatformSettings';
 import NairaMerchants from './pages/NairaMerchants';
 import SweepManagement from './pages/SweepManagement';
@@ -59,6 +60,12 @@ function App() {
           <Route path="/transactions" element={
             <DashboardLayout>
               <Transactions />
+            </DashboardLayout>
+          } />
+
+          <Route path="/transactions/:paymentId" element={
+            <DashboardLayout>
+              <TransactionDetail />
             </DashboardLayout>
           } />
 
