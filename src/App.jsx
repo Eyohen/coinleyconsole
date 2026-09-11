@@ -25,6 +25,7 @@ import TransactionDetail from './pages/TransactionDetail';
 import PlatformSettings from './pages/PlatformSettings';
 import NairaMerchants from './pages/NairaMerchants';
 import SweepManagement from './pages/SweepManagement';
+import TokenOperations from './pages/TokenOperations';
 
 
 
@@ -106,6 +107,11 @@ function App() {
               <SweepManagement />
             </DashboardLayout>
           } />
+          <Route path="/token-operations" element={
+            <DashboardLayout>
+              <TokenOperations />
+            </DashboardLayout>
+          } />
 
           {/* <Route path="/" element={<HomePage />} /> */}
           <Route path="/" element={<Login />} />
@@ -124,5 +130,3 @@ function App() {
 }
 
 export default App;
-
-
