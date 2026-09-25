@@ -241,6 +241,12 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Two-factor step: once the password checks out, the server hands back a short-lived
+  // pendingToken instead of a session, and this screen asks for the authenticator code
+  // before ever calling login()/navigate.
+  const [pendingToken, setPendingToken] = useState('');
+  const [code, setCode] = useState('');
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -269,6 +275,12 @@ const Login = () => {
         timeout: 50000,
       });
 
+      if (res.data?.requiresTwoFactor) {
+        setPendingToken(res.data.pendingToken);
+        setError('');
+        return;
+      }
+
       const { token, admin } = res.data;
 
       if (res.status === 200) {
@@ -280,13 +292,49 @@ const Login = () => {
 
     } catch (err) {
       console.error('Admin login error:', err);
-      
+
       if (err.response?.status === 401) {
         setError('Invalid email or password');
       } else if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
         setError('Login failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code)) {
+      setError('Enter the 6-digit code from your authenticator app');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await axios.post(`${URL}/api/admin/login/verify-2fa`, {
+        pendingToken,
+        code
+      }, { timeout: 50000 });
+
+      const { token, admin } = res.data;
+      sessionStorage.setItem("access_token", token);
+      login({ ...admin, role: 'admin' });
+      setError('');
+      navigate("/dashboard");
+    } catch (err) {
+      console.error('Admin 2FA verification error:', err);
+      if (err.response?.status === 401) {
+        // Pending token expired (5 minutes) or was otherwise invalid — start over.
+        setError('Your login session expired. Please sign in again.');
+        setPendingToken('');
+        setCode('');
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Verification failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -321,6 +369,54 @@ const Login = () => {
                 </div>
               )}
 
+              {pendingToken ? (
+              <form className="space-y-6" onSubmit={handleVerifyCode}>
+                <p className='font-bold text-2xl'>Enter your authenticator code</p>
+                <p className="text-sm text-gray-500">
+                  Open Microsoft Authenticator (or Google Authenticator / Authy) and enter the 6-digit code for this account.
+                </p>
+
+                <div>
+                  <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+                    Verification code
+                  </label>
+                  <input
+                    id="code"
+                    name="code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    required
+                    autoFocus
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+                    className="mt-1 block w-full text-center text-2xl tracking-[0.5em] py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="000000"
+                  />
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isLoading || code.length !== 6}
+                    className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#7042D2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                      isLoading || code.length !== 6 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-90'
+                    }`}
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify and sign in'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setPendingToken(''); setCode(''); setError(''); }}
+                  className="w-full text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Back to sign in
+                </button>
+              </form>
+              ) : (
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <p className='font-bold text-2xl'>Login to admin console</p>
 
@@ -403,6 +499,7 @@ const Login = () => {
                   </button>
                 </div>
               </form>
+              )}
             </div>
           </div>
         </div>

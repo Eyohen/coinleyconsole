@@ -3,6 +3,7 @@ import axios from 'axios';
 import { URL } from '../url';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
+import TwoFactorSettings from '../components/TwoFactorSettings';
 import {
   RiStoreLine,
   RiPhoneLine,
@@ -587,12 +588,28 @@ Coinley can send webhooks to your system when payment status changes.
                   <RiSettings4Line className="mr-3 text-lg" />
                   <span>Platform Settings</span>
                 </button>
+
+                <button
+                  onClick={() => setActiveTab('security')}
+                  className={`w-full px-4 py-3 text-left rounded-lg flex items-center ${
+                    activeTab === 'security'
+                      ? 'bg-[#7042D2] text-white'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <RiShieldLine className="mr-3 text-lg" />
+                  <span>Security</span>
+                </button>
               </div>
             </div>
           </div>
-          
+
           {/* Main content */}
           <div className="lg:col-span-3">
+            {activeTab === 'security' && (
+              <TwoFactorSettings darkMode={darkMode} />
+            )}
+
             {/* Business Information */}
             {activeTab === 'business' && (
               <div className={`rounded-lg shadow-md p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
