@@ -186,10 +186,26 @@ const SweepManagement = () => {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
 
-      if (response.data?.success) {
-        setSuccessMessage('Sweep retry initiated successfully!');
-        setTimeout(() => setSuccessMessage(''), 5000);
+      const data = response.data || {};
+      // The retry endpoint returns HTTP 200 in several outcomes, so inspect the
+      // body rather than treating any 200 as success:
+      //  - success + sweepTxHash: the deposit was actually swept.
+      //  - success without a tx hash: the backend reset/processed the payment but
+      //    nothing was swept in-line (e.g. nothing to sweep, or a soft no-op).
+      //  - success === false: the sweep was attempted and failed.
+      // Previously only the first case was handled, so a failed or no-op retry
+      // showed nothing at all and the button looked dead.
+      if (data.success && data.sweepTxHash) {
+        setSuccessMessage(`Sweep successful (tx ${String(data.sweepTxHash).slice(0, 12)}…)`);
+        setTimeout(() => setSuccessMessage(''), 6000);
         await fetchFailedSweeps(currentPage, networkFilter);
+      } else if (data.success) {
+        setError(data.note || data.message || 'Retry was accepted but no sweep executed. Re-check the payment status.');
+        setTimeout(() => setError(null), 8000);
+        await fetchFailedSweeps(currentPage, networkFilter);
+      } else {
+        setError(data.error || data.message || 'Sweep retry failed.');
+        setTimeout(() => setError(null), 8000);
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to retry sweep');
