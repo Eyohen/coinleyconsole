@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowLeft, Copy, ExternalLink, AlertCircle, RefreshCw,
-  CheckCircle2, Clock, XCircle, AlertTriangle, Zap
+  CheckCircle2, Clock, XCircle, AlertTriangle, Zap, Send
 } from 'lucide-react';
 import { useDarkMode } from '../context/DarkModeContext';
 import { URL } from '../url';
@@ -112,6 +112,8 @@ export default function TransactionDetail() {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [forcing, setForcing] = useState(false);
+  const [showWebhookConfirm, setShowWebhookConfirm] = useState(false);
+  const [resendingWebhook, setResendingWebhook] = useState(false);
   const [toast, setToast] = useState(null);
 
   const fetchPayment = useCallback(async () => {
@@ -173,6 +175,30 @@ export default function TransactionDetail() {
     }
   };
 
+  const handleResendWebhook = async () => {
+    setResendingWebhook(true);
+    setToast(null);
+    try {
+      const response = await axios.post(
+        `${URL}/api/admin/payments/${paymentId}/resend-webhook`,
+        {},
+        { headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } }
+      );
+      setToast({
+        type: 'success',
+        message: response.data?.message || 'Webhook resent successfully'
+      });
+    } catch (err) {
+      setToast({
+        type: 'error',
+        message: err.response?.data?.message || err.response?.data?.error || 'Webhook resend failed'
+      });
+    } finally {
+      setResendingWebhook(false);
+      setShowWebhookConfirm(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -206,6 +232,7 @@ export default function TransactionDetail() {
   const explorerUrl = payment.Network?.explorerUrl;
   const status = payment.status;
   const canForceSweep = !payment.sweptAt && payment.depositMethod === 'deposit_address';
+  const hasCallbackUrl = Boolean(payment.callbackUrl || payment.metadata?.callbackUrl);
   const isExpired = status === 'expired';
 
   return (
@@ -409,6 +436,29 @@ export default function TransactionDetail() {
         </section>
       )}
 
+      <section className={`mt-6 p-5 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+        <div className="flex items-start gap-3">
+          <Send size={20} className="text-[#7042D2] mt-0.5" />
+          <div className="flex-1">
+            <h2 className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Merchant Webhook</h2>
+            <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Resend the latest recorded webhook for this payment to its original callback endpoint.
+              The event, payload, and destination are selected by the server and cannot be changed here.
+            </p>
+            {!hasCallbackUrl && (
+              <p className="text-sm mt-2 text-amber-600">This payment has no callback URL.</p>
+            )}
+            <button
+              onClick={() => setShowWebhookConfirm(true)}
+              disabled={!hasCallbackUrl || resendingWebhook}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#7042D2] text-white rounded-md text-sm hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send size={16} /> Resend Webhook
+            </button>
+          </div>
+        </div>
+      </section>
+
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className={`max-w-md w-full rounded-lg p-6 ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'}`}>
@@ -440,6 +490,40 @@ export default function TransactionDetail() {
               >
                 {forcing && <RefreshCw size={14} className="animate-spin" />}
                 Confirm Force Sweep
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWebhookConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`max-w-md w-full rounded-lg p-6 ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'}`}>
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <Send className="text-[#7042D2]" size={20} />
+              Confirm Webhook Resend
+            </h3>
+            <p className="text-sm mb-4">
+              This will resend the latest recorded webhook for payment <strong className="font-mono">{shortenHash(payment.id, 8, 6)}</strong>.
+            </p>
+            <p className="text-sm mb-4">
+              The server will use the original payment callback endpoint and create a fresh signed delivery.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowWebhookConfirm(false)}
+                disabled={resendingWebhook}
+                className={`px-4 py-2 text-sm rounded-md border ${darkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-50'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResendWebhook}
+                disabled={resendingWebhook}
+                className="px-4 py-2 text-sm rounded-md bg-[#7042D2] text-white hover:bg-opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {resendingWebhook && <RefreshCw size={14} className="animate-spin" />}
+                Confirm Resend
               </button>
             </div>
           </div>
