@@ -26,6 +26,7 @@ import PlatformSettings from './pages/PlatformSettings';
 import NairaMerchants from './pages/NairaMerchants';
 import SweepManagement from './pages/SweepManagement';
 import TokenOperations from './pages/TokenOperations';
+import PaymentAnalytics from './pages/PaymentAnalytics';
 
 
 
@@ -110,6 +111,11 @@ function App() {
           <Route path="/token-operations" element={
             <DashboardLayout>
               <TokenOperations />
+            </DashboardLayout>
+          } />
+          <Route path="/payment-analytics" element={
+            <DashboardLayout>
+              <PaymentAnalytics />
             </DashboardLayout>
           } />
 
