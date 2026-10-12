@@ -498,6 +498,7 @@ import {
   Calendar,
   ChevronDown,
   ExternalLink,
+  Download,
   X,
   Activity
 } from 'lucide-react';
@@ -551,6 +552,7 @@ const Transactions = () => {
   const [copySuccess, setCopySuccess] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [showAgentOnly, setShowAgentOnly] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   // Format date for display
   const formatDate = (dateString) => {
@@ -627,6 +629,38 @@ const Transactions = () => {
     setRefreshing(true);
     await fetchTransactions(currentPage);
     setRefreshing(false);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    setError(null);
+    try {
+      const params = Object.fromEntries(
+        Object.entries(filters).filter(([key, value]) => value !== '' && !['sortBy', 'sortOrder'].includes(key))
+      );
+      const response = await axios.get(`${URL}/api/admin/transactions/export`, {
+        params,
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` },
+        responseType: 'blob'
+      });
+      const disposition = response.headers['content-disposition'] || '';
+      const filename = disposition.match(/filename="?([^";]+)"?/)?.[1]
+        || `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setError(requestError.response?.status === 404
+        ? 'No transactions found for the selected criteria.'
+        : 'Failed to export transactions. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
   
   // Handle page change
@@ -822,6 +856,18 @@ const Transactions = () => {
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={exporting || loading}
+            className={`flex items-center px-4 py-2 border rounded-md disabled:opacity-50 ${
+              darkMode
+                ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Download size={18} className="mr-2" />
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </button>
           <button
             onClick={() => setShowAgentOnly(prev => !prev)}
             className={`flex items-center px-3 py-2 border rounded-md text-sm transition-colors ${
