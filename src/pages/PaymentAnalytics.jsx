@@ -58,11 +58,9 @@ export default function PaymentAnalytics() {
   ];
 
   return <div className="space-y-5">
-    <section className="rounded-2xl bg-[#131720] p-7 text-white shadow-xl">
-      <div className="flex flex-wrap items-end justify-between gap-5">
-        <div><span className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-300">Internal analytics</span><h1 className="mt-2 text-3xl font-bold">Payment funnel</h1><p className="mt-2 text-sm text-gray-400">A live rolling view of checkout performance over the last 24 hours.</p></div>
-        <div className="flex items-center gap-3"><div className="rounded-xl border border-gray-700 bg-gray-800 px-4 py-2 text-xs text-gray-300"><span className="block text-gray-500">Window</span><strong>Last 24 hours</strong></div><button onClick={load} disabled={loading} className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold hover:bg-purple-500 disabled:opacity-60"><RefreshCw size={16} className={loading ? 'animate-spin' : ''}/>Refresh</button></div>
-      </div>
+    <section className="flex flex-wrap items-center justify-between gap-4 py-2">
+      <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Payment funnel</h1>
+      <div className="flex items-center gap-3"><div className={`rounded-xl border px-4 py-2 text-xs ${card}`}><span className={`block ${muted}`}>Window</span><strong>Last 24 hours</strong></div><button onClick={load} disabled={loading} className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-60"><RefreshCw size={16} className={loading ? 'animate-spin' : ''}/>Refresh</button></div>
     </section>
 
     {error && <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><AlertCircle size={18}/>{error}</div>}
