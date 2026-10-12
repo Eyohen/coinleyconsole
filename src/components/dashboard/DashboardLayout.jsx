@@ -102,6 +102,7 @@ const DashboardLayout = ({ children }) => {
     { path: "/merchants", title: "Merchants", icon: <Users size={25} /> },
     { path: "/naira-merchants", title: "Naira Merchants", icon: <ArrowRightLeft size={20} /> },
     { path: "/transactions", title: "Transactions", icon: <HiOutlineCurrencyDollar size={25} /> },
+    { path: "/payment-analytics", title: "Payment Analytics", icon: <BarChart size={20} /> },
     { path: "/sweep-management", title: "Sweep Management", icon: <Wallet size={20} /> },
     { path: "/token-operations", title: "Token Operations", icon: <Coins size={20} /> },
     { path: "/settings", title: "Settings", icon: <MdOutlineSettings size={20} /> },
