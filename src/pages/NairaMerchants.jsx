@@ -120,10 +120,11 @@ const NairaMerchants = () => {
 
   const fetchAllMerchants = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/admin/merchants`, { headers });
+      // The list is paginated (10 per page by default) and nested under
+      // data.merchants; ask for every merchant so all of them can be converted.
+      const response = await axios.get(`${BASE_URL}/api/admin/merchants?limit=1000`, { headers });
       if (response.data?.success) {
-        // Filter out merchants that are already naira merchants
-        setAllMerchants(response.data.merchants || []);
+        setAllMerchants(response.data.data?.merchants || response.data.merchants || []);
       }
     } catch (err) {
       console.error('Error fetching all merchants:', err);
